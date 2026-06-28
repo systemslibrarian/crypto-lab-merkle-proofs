@@ -37,11 +37,13 @@ beforeAll(async () => {
   const { mountExplorer } = await import('../src/ui/explorer');
   const { mountEfficiency } = await import('../src/ui/efficiency');
   const { mountSecurity } = await import('../src/ui/security');
+  const { mountConsistency } = await import('../src/ui/consistency');
   const { mountLearn } = await import('../src/ui/learn');
   // Should not throw — every qs() target must exist in index.html.
   mountExplorer();
   mountEfficiency();
   mountSecurity();
+  mountConsistency();
   mountLearn();
   await until(() => /^[0-9a-f]{64}$/.test(text('#root-hash')));
 });
@@ -143,6 +145,20 @@ describe('CVE-2012-2459 duplication demo', () => {
     promote.click(); // proper radio-group selection + change event
     await until(() => text('#dup-status').includes('DIFFER'));
     expect(text('#dup-status')).toContain('DIFFER');
+  });
+});
+
+describe('consistency (append-only) proof wiring', () => {
+  it('an honest append verifies as CONSISTENT by default', async () => {
+    await until(() => text('#cons-status').length > 0);
+    expect(text('#cons-status')).toContain('CONSISTENT');
+    expect(document.querySelectorAll('#cons-log .mt-chip').length).toBeGreaterThan(0);
+  });
+
+  it('rewriting an early entry is caught as NOT CONSISTENT', async () => {
+    document.querySelector<HTMLButtonElement>('#cons-tamper')!.click();
+    await until(() => text('#cons-status').includes('NOT CONSISTENT'));
+    expect(text('#cons-status')).toContain('NOT CONSISTENT');
   });
 });
 

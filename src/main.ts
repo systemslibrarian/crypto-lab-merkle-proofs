@@ -12,6 +12,7 @@ import { renderTree } from './ui/tree-svg';
 import { mountExplorer } from './ui/explorer';
 import { mountEfficiency } from './ui/efficiency';
 import { mountSecurity } from './ui/security';
+import { mountConsistency } from './ui/consistency';
 import { mountLearn } from './ui/learn';
 
 async function renderIntroDiagram(): Promise<void> {
@@ -26,5 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
   mountExplorer();
   mountEfficiency();
   mountSecurity();
+  mountConsistency();
   mountLearn();
 });

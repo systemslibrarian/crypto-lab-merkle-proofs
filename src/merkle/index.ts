@@ -4,3 +4,4 @@ export * from './types';
 export * from './tree';
 export * from './proof';
 export * from './security';
+export * from './consistency';

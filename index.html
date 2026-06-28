@@ -339,9 +339,31 @@
       </div>
     </section>
 
-    <!-- 7. Real-world applications -->
+    <!-- 7. Consistency (append-only) proofs -->
+    <section class="card" aria-labelledby="s-cons">
+      <h2 id="s-cons">7 · Consistency (Append-Only) Proofs</h2>
+      <p>Everything above proves <em>inclusion</em> — that one leaf is in the tree. A <strong>consistency proof</strong> answers a different question that logs care about: is the old tree of size <code>m</code> an exact <strong>prefix</strong> of the new tree of size <code>n</code> — i.e. did the log only <em>append</em>, never rewrite history? This is the guarantee <a href="https://www.rfc-editor.org/rfc/rfc6962#section-2.1.2" target="_blank" rel="noopener noreferrer">Certificate Transparency</a> is built on.</p>
+
+      <p class="mt-hint">The log (a growing list of certificates):</p>
+      <div id="cons-log" class="leaf-list" aria-label="Append-only log entries"></div>
+
+      <div class="select-row">
+        <label for="cons-old">Old size (m)</label>
+        <select id="cons-old"></select>
+        <label for="cons-new">New size (n)</label>
+        <select id="cons-new"></select>
+        <button type="button" id="cons-run" class="mt-btn mt-btn--primary">Prove consistency</button>
+        <button type="button" id="cons-tamper" class="mt-btn mt-btn--ghost">Rewrite history (entry 0)</button>
+      </div>
+
+      <div id="cons-status" class="mt-verdict" role="status" aria-live="polite"></div>
+      <div id="cons-output" class="sec-output"></div>
+      <p class="mt-hint">“Rewrite history” keeps the auditor’s remembered old root but alters an early entry in the new log — the consistency proof then fails, exposing the tampering.</p>
+    </section>
+
+    <!-- 8. Real-world applications -->
     <section class="card" aria-labelledby="s-apps">
-      <h2 id="s-apps">7 · Where Merkle Proofs Are Used</h2>
+      <h2 id="s-apps">8 · Where Merkle Proofs Are Used</h2>
       <div class="app-grid">
         <div class="app">
           <h3>Bitcoin &amp; Ethereum</h3>
