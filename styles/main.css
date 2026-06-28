@@ -209,8 +209,8 @@ input[type="text"]:focus-visible, select:focus-visible { border-color: var(--acc
 .mt-node--clickable { cursor: pointer; }
 .mt-node--clickable:hover .mt-box { stroke: var(--accent); }
 
-.mt-tag { font-family: var(--font-sans); font-size: 9px; fill: var(--text-muted); text-anchor: middle; }
-.mt-hash { font-family: var(--font-mono); font-size: 10px; fill: var(--text); text-anchor: middle; }
+.mt-tag { font-family: var(--font-sans); font-size: 11px; fill: var(--text-muted); text-anchor: middle; }
+.mt-hash { font-family: var(--font-mono); font-size: 12px; fill: var(--text); text-anchor: middle; }
 .mt-node--selected .mt-hash, .mt-node--selected .mt-tag { fill: var(--text); }
 .mt-marker { font-size: 12px; text-anchor: end; fill: var(--text); font-weight: 700; }
 .mt-node--sibling .mt-marker { fill: var(--amber); }
@@ -305,7 +305,7 @@ input[type="text"]:focus-visible, select:focus-visible { border-color: var(--acc
 /* ---------- Security panel ---------- */
 .sec-controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin: 0.7rem 0; }
 .toggle { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-.toggle input { width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
+.toggle input { width: 1.25rem; height: 1.25rem; accent-color: var(--accent); }
 .sec-output { margin-top: 0.5rem; }
 .mt-sec-detail { display: grid; gap: 0.2rem; }
 .mt-sec-detail dt { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-top: 0.5rem; }
@@ -379,7 +379,11 @@ input[type="text"]:focus-visible, select:focus-visible { border-color: var(--acc
 }
 .quiz-card h4 { margin-bottom: 0.3rem; }
 .quiz-card label { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.35rem 0; cursor: pointer; }
-.quiz-card input[type="radio"] { margin-top: 0.25rem; accent-color: var(--accent); min-width: 1.1rem; min-height: 1.1rem; }
+.quiz-card input[type="radio"] { margin-top: 0.25rem; accent-color: var(--accent); min-width: 1.25rem; min-height: 1.25rem; }
+
+/* Click-to-copy affordance for full hashes */
+.mt-copy { cursor: pointer; }
+.mt-copy:hover { text-decoration: underline dotted; }
 .quiz-fieldset { border: 0; padding: 0; margin: 0; }
 .quiz-fieldset legend { padding: 0; margin-bottom: 0.2rem; font-weight: 600; }
 .radio-set { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }

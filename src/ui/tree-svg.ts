@@ -11,10 +11,10 @@ import { shortHex } from '../merkle/hash';
 import type { MerkleNode, MerkleTree } from '../merkle/types';
 import { esc } from './dom';
 
-const BOX_W = 104;
-const BOX_H = 44;
+const BOX_W = 116;
+const BOX_H = 48;
 const COL_GAP = 26; // horizontal gap between leaf columns
-const ROW_GAP = 78; // vertical gap between depths
+const ROW_GAP = 82; // vertical gap between depths
 const PAD = 24;
 
 export interface Placed {
@@ -184,9 +184,9 @@ export function renderTree(
     boxes.push(
       `<g class="${nodeClasses(node, path)}${clickable}"${attrs}>` +
         `<rect class="mt-box" x="${left}" y="${top}" width="${BOX_W}" height="${BOX_H}" rx="8" />` +
-        (marker ? `<text class="mt-marker" x="${left + BOX_W - 7}" y="${top + 13}">${marker}</text>` : '') +
-        `<text class="mt-tag" x="${x}" y="${top + 14}">${tag}${label ? ': ' + label : ''}</text>` +
-        `<text class="mt-hash" x="${x}" y="${top + 31}">${shortHex(node.hashHex, 7, 7)}</text>` +
+        (marker ? `<text class="mt-marker" x="${left + BOX_W - 8}" y="${top + 16}">${marker}</text>` : '') +
+        `<text class="mt-tag" x="${x}" y="${top + 17}">${tag}${label ? ': ' + label : ''}</text>` +
+        `<text class="mt-hash" x="${x}" y="${top + 35}">${shortHex(node.hashHex, 6, 6)}</text>` +
         `</g>`,
     );
   }

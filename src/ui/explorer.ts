@@ -279,7 +279,7 @@ function renderProof(): void {
       (s, i) =>
         `<li class="mt-step">` +
         `<span class="mt-step-i">${i + 1}</span>` +
-        `<div class="mt-step-body"><code class="mt-mono">${s.siblingHex}</code>` +
+        `<div class="mt-step-body"><code class="mt-mono mt-copy" title="Click to copy">${s.siblingHex}</code>` +
         `<span class="mt-step-side mt-side--${s.side}">${sideLabel(s.side)}</span></div>` +
         `</li>`,
     )
@@ -317,7 +317,7 @@ function renderVerifySteps(): void {
     .map(
       (s, i) =>
         `<div class="mt-vstep">` +
-        `<code class="mt-mono">${s.siblingHex}</code>` +
+        `<code class="mt-mono mt-copy" title="Click to copy">${s.siblingHex}</code>` +
         `<span class="mt-side--${s.side}">${s.side}</span>` +
         `<button type="button" class="mt-btn mt-btn--ghost" data-flip="${i}" aria-label="Flip a bit in proof step ${i + 1}">flip a bit</button>` +
         `</div>`,

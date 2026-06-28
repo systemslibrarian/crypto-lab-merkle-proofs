@@ -147,7 +147,7 @@
     </ul>
   </div>
 
-  <p id="sr-status" class="sr-only" role="status" aria-live="polite"></p>
+  <p id="sr-status" class="sr-only" data-live></p>
 
   <main>
     <!-- 1. What is a Merkle tree -->
@@ -246,7 +246,7 @@
       <p class="mt-hint">Each row is one <span data-term="inclusion-proof">sibling hash</span>. Flip a bit to see verification fail.</p>
       <div id="verify-steps" class="verify-steps"></div>
 
-      <div id="verify-verdict" class="mt-verdict" role="status" aria-live="polite"></div>
+      <div id="verify-verdict" class="mt-verdict" data-live></div>
 
       <h3 class="sub">Recomputation trace</h3>
       <p class="mt-hint">The verifier recomputes the root from the leaf up. Expand “show bytes” on any line to see the exact input to SHA-256 — leaves are <code>0x00 ∥ data</code>, nodes are <code>0x01 ∥ left ∥ right</code>.</p>
@@ -306,7 +306,7 @@
         <button type="button" id="sec-run" class="mt-btn mt-btn--primary">Run the attack</button>
       </div>
 
-      <div id="sec-status" class="mt-verdict" role="status" aria-live="polite"></div>
+      <div id="sec-status" class="mt-verdict" data-live></div>
       <div id="sec-output" class="sec-output"></div>
       <p class="mt-hint">Turn the toggle <strong>off</strong> to see the forgery accepted (vulnerable), then back <strong>on</strong> to see it rejected. The main builder above always keeps domain separation on.</p>
 
@@ -320,7 +320,7 @@
         </div>
         <button type="button" id="dup-run" class="mt-btn mt-btn--primary">Compare roots</button>
       </div>
-      <div id="dup-status" class="mt-verdict" role="status" aria-live="polite"></div>
+      <div id="dup-status" class="mt-verdict" data-live></div>
       <div id="dup-output" class="sec-output"></div>
 
       <div class="quiz-card"
@@ -356,7 +356,7 @@
         <button type="button" id="cons-tamper" class="mt-btn mt-btn--ghost">Rewrite history (entry 0)</button>
       </div>
 
-      <div id="cons-status" class="mt-verdict" role="status" aria-live="polite"></div>
+      <div id="cons-status" class="mt-verdict" data-live></div>
       <div id="cons-output" class="sec-output"></div>
       <p class="mt-hint">“Rewrite history” keeps the auditor’s remembered old root but alters an early entry in the new log — the consistency proof then fails, exposing the tampering.</p>
     </section>

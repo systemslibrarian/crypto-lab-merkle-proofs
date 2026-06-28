@@ -55,12 +55,12 @@ export function mountConsistency(): void {
     }
     void domainSepOk;
     const steps = proof.length
-      ? `<ol class="mt-steps">${proof.map((s, i) => `<li class="mt-step"><span class="mt-step-i">${i + 1}</span><div class="mt-step-body"><code class="mt-mono">${s.hex}</code></div></li>`).join('')}</ol>`
+      ? `<ol class="mt-steps">${proof.map((s, i) => `<li class="mt-step"><span class="mt-step-i">${i + 1}</span><div class="mt-step-body"><code class="mt-mono mt-copy" title="Click to copy">${s.hex}</code></div></li>`).join('')}</ol>`
       : '<p class="mt-hint">Empty proof (the two sizes are equal).</p>';
     out.innerHTML =
       `<dl class="mt-sec-detail">` +
-      `<dt>Old root (size ${m})</dt><dd><code class="mt-mono mt-wrap">${oldRootHex}</code></dd>` +
-      `<dt>New root (size ${n})</dt><dd><code class="mt-mono mt-wrap">${newRootHex}</code></dd>` +
+      `<dt>Old root (size ${m})</dt><dd><code class="mt-mono mt-wrap mt-copy" title="Click to copy">${oldRootHex}</code></dd>` +
+      `<dt>New root (size ${n})</dt><dd><code class="mt-mono mt-wrap mt-copy" title="Click to copy">${newRootHex}</code></dd>` +
       `</dl>` +
       `<h4 class="sub">Consistency proof (${proof.length} hash${proof.length === 1 ? '' : 'es'})</h4>` +
       steps;
