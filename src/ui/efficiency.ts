@@ -35,6 +35,11 @@ export function mountEfficiency(): void {
     const fullBytes = n * 32; // all leaf hashes a naive verifier would need
     const ratio = fullBytes / proofBytes;
 
+    slider.setAttribute(
+      'aria-valuetext',
+      `2 to the ${exp}, ${fmtCount(n)} leaves: proof ${proofHashes} hashes versus ${fmtCount(n)} leaf hashes`,
+    );
+
     readout.innerHTML =
       `<strong>${fmtCount(n)}</strong> leaves → a proof is just <strong>${proofHashes}</strong> ` +
       `sibling hashes (<strong>${fmtBytes(proofBytes)}</strong>).<br>` +

@@ -159,23 +159,36 @@ export function renderTree(
     const tag = isRoot ? 'ROOT' : node.isLeaf ? `leaf ${node.leafIndex}` : 'node';
     const rawLabel = node.isLeaf && node.label ? node.label : '';
     const label = rawLabel ? esc(rawLabel.length > 10 ? rawLabel.slice(0, 9) + '…' : rawLabel) : '';
+    // Non-color state marker so proof participation is conveyed by SHAPE+TEXT,
+    // not color alone (WCAG 1.4.1). Legend in the page maps each glyph.
+    const marker =
+      node === path.leaf ? '●' : path.siblingNodes.has(node) ? '◆' : path.pathNodes.has(node) ? '↑' : '';
     const clickable = node.isLeaf ? ' mt-node--clickable' : '';
-    const attrs = node.isLeaf
-      ? ` tabindex="0" role="button" data-leaf-index="${node.leafIndex}" aria-label="Leaf ${node.leafIndex}${label ? ', ' + label : ''}, select to build proof"`
-      : '';
+    // data-leaf-index drives mouse clicks as a visual convenience; the
+    // <select> in section 3 is the accessible/keyboard path. We do NOT mark
+    // these as role="button", because an SVG with role="img" hides descendants.
+    const attrs = node.isLeaf ? ` data-leaf-index="${node.leafIndex}"` : '';
     boxes.push(
       `<g class="${nodeClasses(node, path)}${clickable}"${attrs}>` +
         `<rect class="mt-box" x="${left}" y="${top}" width="${BOX_W}" height="${BOX_H}" rx="8" />` +
+        (marker ? `<text class="mt-marker" x="${left + BOX_W - 7}" y="${top + 13}">${marker}</text>` : '') +
         `<text class="mt-tag" x="${x}" y="${top + 14}">${tag}${label ? ': ' + label : ''}</text>` +
         `<text class="mt-hash" x="${x}" y="${top + 31}">${shortHex(node.hashHex, 7, 7)}</text>` +
         `</g>`,
     );
   }
 
+  // Describe the whole figure (and current selection) for assistive tech, since
+  // the textual proof list mirrors what the colors show.
+  let aria = `Merkle tree with ${tree.leaves.length} leaf nodes`;
+  if (path.leaf && path.leaf.leafIndex !== undefined) {
+    aria += `. Leaf ${path.leaf.leafIndex}${path.leaf.label ? ' (' + path.leaf.label + ')' : ''} is selected; its proof is ${path.siblingNodes.size} sibling hashes shown with a diamond marker.`;
+  }
+
   container.innerHTML =
     `<svg class="mt-svg" viewBox="0 0 ${layout.width} ${layout.height}" ` +
     `width="${layout.width}" height="${layout.height}" role="img" ` +
-    `aria-label="Merkle tree with ${tree.leaves.length} leaves">` +
+    `aria-label="${esc(aria)}">` +
     `<g class="mt-edges">${edges.join('')}</g>` +
     `<g class="mt-boxes">${boxes.join('')}</g>` +
     `</svg>`;

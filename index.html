@@ -135,17 +135,19 @@
 <!-- END crypto-lab shared header -->
 
 <div id="app">
-  <header class="page-header">
+  <div class="page-header">
     <span class="category-chip">Hashing · Data Structures</span>
     <h1 class="page-title">Merkle Tree Proofs</h1>
     <p class="page-subtitle">Build a tree, prove one leaf is in it with a handful of hashes, and verify it without the whole tree.</p>
-    <div class="chip-row" aria-label="Primitives used">
-      <span class="chip">SHA-256</span>
-      <span class="chip">RFC 6962</span>
-      <span class="chip">Inclusion Proof</span>
-      <span class="chip">WebCrypto</span>
-    </div>
-  </header>
+    <ul class="chip-row" aria-label="Primitives used">
+      <li class="chip">SHA-256</li>
+      <li class="chip">RFC 6962</li>
+      <li class="chip">Inclusion Proof</li>
+      <li class="chip">WebCrypto</li>
+    </ul>
+  </div>
+
+  <p id="sr-status" class="sr-only" role="status" aria-live="polite"></p>
 
   <main>
     <!-- 1. What is a Merkle tree -->
@@ -183,7 +185,8 @@
       <div id="leaf-list" class="leaf-list" aria-label="Current leaves"></div>
       <p id="leaf-count" class="mt-note"></p>
 
-      <div id="tree-canvas" class="tree-scroll" aria-live="polite"></div>
+      <p class="scroll-hint" aria-hidden="true">Wide trees scroll horizontally →</p>
+      <div id="tree-canvas" class="tree-scroll"></div>
 
       <div class="root-box">
         <span class="root-label">Merkle root (SHA-256)</span>
@@ -194,7 +197,19 @@
     <!-- 3. Proof generation -->
     <section class="card" aria-labelledby="s-proof">
       <h2 id="s-proof">3 · Generate a Proof</h2>
-      <p>An <strong>inclusion proof</strong> (audit path) is the minimal set of sibling hashes needed to recompute the root from one leaf. In the tree above, the selected leaf is highlighted, its path to the root is the running chain, and the <span class="legend-swatch legend-sibling"></span><strong>amber</strong> nodes are the proof — the only hashes a verifier receives.</p>
+      <p>An <strong>inclusion proof</strong> (audit path) is the minimal set of sibling hashes needed to recompute the root from one leaf. Pick a leaf below (or tap one in the tree above) to highlight its proof.</p>
+
+      <div class="select-row">
+        <label for="leaf-select">Leaf to prove</label>
+        <select id="leaf-select"></select>
+      </div>
+
+      <ul class="legend" aria-label="Tree highlight key">
+        <li><span class="legend-mark legend-mark--selected" aria-hidden="true">●</span> selected leaf</li>
+        <li><span class="legend-mark legend-mark--proof" aria-hidden="true">◆</span> proof (sibling) hash — the only hashes a verifier receives</li>
+        <li><span class="legend-mark legend-mark--path" aria-hidden="true">↑</span> recomputed path to the root</li>
+      </ul>
+
       <div id="proof-output" class="proof-output"></div>
     </section>
 
@@ -230,7 +245,7 @@
 
       <div class="eff-slider-row">
         <label for="eff-slider">Tree size: 2<sup id="eff-exp-label"></sup></label>
-        <input type="range" id="eff-slider" min="1" max="30" value="10" step="1" />
+        <input type="range" id="eff-slider" min="1" max="30" value="10" step="1" aria-describedby="eff-readout" />
       </div>
       <p id="eff-readout" class="eff-readout"></p>
       <div class="eff-bars" aria-hidden="true">

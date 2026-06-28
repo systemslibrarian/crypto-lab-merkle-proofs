@@ -39,11 +39,13 @@ let leafList: HTMLElement;
 let leafInput: HTMLInputElement;
 let leafCount: HTMLElement;
 let rootHash: HTMLElement;
+let leafSelect: HTMLSelectElement;
 let proofOut: HTMLElement;
 let verifyLeaf: HTMLInputElement;
 let verifySteps: HTMLElement;
 let verifyTrace: HTMLElement;
 let verifyVerdict: HTMLElement;
+let srStatus: HTMLElement;
 
 export function mountExplorer(): void {
   canvas = qs('#tree-canvas');
@@ -51,11 +53,13 @@ export function mountExplorer(): void {
   leafInput = qs<HTMLInputElement>('#leaf-input');
   leafCount = qs('#leaf-count');
   rootHash = qs('#root-hash');
+  leafSelect = qs<HTMLSelectElement>('#leaf-select');
   proofOut = qs('#proof-output');
   verifyLeaf = qs<HTMLInputElement>('#verify-leaf');
   verifySteps = qs('#verify-steps');
   verifyTrace = qs('#verify-trace');
   verifyVerdict = qs('#verify-verdict');
+  srStatus = qs('#sr-status');
 
   // Builder controls
   qs('#leaf-add').addEventListener('click', addLeaf);
@@ -71,12 +75,10 @@ export function mountExplorer(): void {
     if (btn) removeLeaf(Number(btn.dataset.remove));
   });
 
-  // Leaf selection by clicking a leaf box in the SVG
+  // Leaf selection: the <select> is the accessible/keyboard path; clicking a
+  // leaf box in the SVG is a visual convenience for pointer users.
   canvas.addEventListener('click', onCanvasSelect);
-  canvas.addEventListener('keydown', (e) => {
-    const key = (e as KeyboardEvent).key;
-    if (key === 'Enter' || key === ' ') onCanvasSelect(e);
-  });
+  leafSelect.addEventListener('change', () => selectLeaf(Number(leafSelect.value)));
 
   // Verify controls
   qs('#verify-honest').addEventListener('click', resetVerify);
@@ -90,8 +92,16 @@ export function mountExplorer(): void {
     state.vLeaf = verifyLeaf.value;
   });
 
-  rootHash.addEventListener('click', () => {
+  const copyRoot = (): void => {
     if (state.tree) void copyText(state.tree.root.hashHex);
+  };
+  rootHash.addEventListener('click', copyRoot);
+  rootHash.addEventListener('keydown', (e) => {
+    const key = (e as KeyboardEvent).key;
+    if (key === 'Enter' || key === ' ') {
+      e.preventDefault();
+      copyRoot();
+    }
   });
 
   void refresh();
@@ -161,12 +171,27 @@ async function refresh(): Promise<void> {
   rootHash.textContent = state.tree.root.hashHex;
   if (state.leaves.length === 0) state.selected = null;
   else if (state.selected === null) state.selected = 0;
+  renderLeafSelect(); // option list only changes when the leaf set changes
   syncSelection();
+}
+
+function renderLeafSelect(): void {
+  if (state.leaves.length === 0) {
+    leafSelect.innerHTML = '<option value="">No leaves yet</option>';
+    leafSelect.disabled = true;
+    return;
+  }
+  leafSelect.disabled = false;
+  leafSelect.innerHTML = state.leaves
+    .map((l, i) => `<option value="${i}"${i === state.selected ? ' selected' : ''}>Leaf ${i}: ${esc(l)}</option>`)
+    .join('');
+  if (state.selected !== null) leafSelect.value = String(state.selected);
 }
 
 /** Re-render tree highlight, proof, and reset verification to the honest proof. */
 function syncSelection(): void {
   if (!state.tree) return;
+  if (state.selected !== null) leafSelect.value = String(state.selected);
   const path = findPath(state.tree, state.selected);
   renderTree(canvas, state.tree, path);
 
@@ -182,7 +207,14 @@ function syncSelection(): void {
 
   state.proof = generateProof(state.tree, state.selected);
   renderProof();
+  announce(
+    `Selected leaf ${state.proof.leafIndex}, "${state.proof.leafLabel}". Proof is ${state.proof.steps.length} sibling hash${state.proof.steps.length === 1 ? '' : 'es'}.`,
+  );
   resetVerify();
+}
+
+function announce(msg: string): void {
+  if (srStatus) srStatus.textContent = msg;
 }
 
 function renderLeafChips(): void {
