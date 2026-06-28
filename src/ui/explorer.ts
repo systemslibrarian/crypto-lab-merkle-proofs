@@ -164,10 +164,15 @@ function updateCount(): void {
 }
 
 /** Rebuild the tree from leaves and refresh every dependent view. */
+let refreshToken = 0;
 async function refresh(): Promise<void> {
+  const token = ++refreshToken;
   renderLeafChips();
   updateCount();
-  state.tree = await buildTreeFromStrings(state.leaves, true);
+  const tree = await buildTreeFromStrings(state.leaves, true);
+  // A newer refresh started while we were hashing — discard this stale result.
+  if (token !== refreshToken) return;
+  state.tree = tree;
   rootHash.textContent = state.tree.root.hashHex;
   if (state.leaves.length === 0) state.selected = null;
   else if (state.selected === null) state.selected = 0;
@@ -253,14 +258,18 @@ function renderProof(): void {
     )
     .join('');
 
-  proofOut.innerHTML =
-    `<div class="mt-proof-head">` +
+  const head =
     `<p>Proof for <strong>leaf ${p.leafIndex}</strong> (<code>${esc(p.leafLabel)}</code>): ` +
-    `<strong>${p.steps.length}</strong> sibling hash${p.steps.length === 1 ? '' : 'es'}.</p>` +
-    `<p class="mt-hint">A verifier needs only these ${p.steps.length} hash${p.steps.length === 1 ? '' : 'es'} + the leaf — ` +
-    `not the other ${Math.max(0, total - 1)} leaf hash${total - 1 === 1 ? '' : 'es'} — to recompute the root.</p>` +
-    `</div>` +
-    (p.steps.length ? `<ol class="mt-steps">${steps}</ol>` : '<p class="mt-hint">Single-leaf tree: the leaf hash <em>is</em> the root, so the proof is empty.</p>');
+    `<strong>${p.steps.length}</strong> sibling hash${p.steps.length === 1 ? '' : 'es'}.</p>`;
+
+  const others = total - 1;
+  const body = p.steps.length
+    ? `<p class="mt-hint">A verifier needs only these ${p.steps.length} hash${p.steps.length === 1 ? '' : 'es'} + the leaf — ` +
+      `not the other ${others} leaf hash${others === 1 ? '' : 'es'} — to recompute the root.</p>` +
+      `<ol class="mt-steps">${steps}</ol>`
+    : `<p class="mt-hint">Single-leaf tree: the leaf hash <em>is</em> the root, so the proof is empty.</p>`;
+
+  proofOut.innerHTML = `<div class="mt-proof-head">${head}</div>${body}`;
 }
 
 function resetVerify(): void {
@@ -313,11 +322,15 @@ function hex(bytes: Uint8Array): string {
   return out;
 }
 
+let verifyToken = 0;
 async function runVerify(): Promise<void> {
   if (!state.tree || state.selected === null) return;
   state.vLeaf = verifyLeaf.value;
   const expected = state.tree.root.hashHex;
+  const token = ++verifyToken;
   const res = await verifyProof(utf8(state.vLeaf), state.vSteps, expected, true);
+  // A newer verify started while we were hashing — discard this stale result.
+  if (token !== verifyToken) return;
 
   const trace = res.steps
     .map(
