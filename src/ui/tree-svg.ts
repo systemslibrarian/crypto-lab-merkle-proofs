@@ -49,6 +49,10 @@ export function layoutTree(tree: MerkleTree): Layout {
 
   // In-order traversal assigns each leaf a column; internals center over children.
   function assign(node: MerkleNode): number {
+    // Memoize: in duplicate mode a node can be both children of its parent
+    // (right === left). Without this guard it would be placed/counted twice.
+    const cached = xOf.get(node);
+    if (cached !== undefined) return cached;
     if (!node.left && !node.right) {
       const x = PAD + BOX_W / 2 + col * step;
       col += 1;
@@ -83,39 +87,48 @@ export interface PathInfo {
   pathNodes: Set<MerkleNode>; // running-hash chain: leaf → root
   siblingNodes: Set<MerkleNode>; // proof inputs
   leaf: MerkleNode | null;
+  /** Ordered running-hash chain, leaf (index 0) → root (last). */
+  chain: MerkleNode[];
+  /** The node the running hash currently sits on, for step-through. */
+  current?: MerkleNode | null;
 }
 
 /** Walk root→leaf, recording ancestors (path) and the sibling taken at each step. */
 export function findPath(tree: MerkleTree, leafIndex: number | null): PathInfo {
   const pathNodes = new Set<MerkleNode>();
   const siblingNodes = new Set<MerkleNode>();
-  if (leafIndex === null) return { pathNodes, siblingNodes, leaf: null };
+  if (leafIndex === null) return { pathNodes, siblingNodes, leaf: null, chain: [] };
 
   let leaf: MerkleNode | null = null;
+  let chain: MerkleNode[] = [];
   function dfs(node: MerkleNode, trail: MerkleNode[]): boolean {
     if (node.isLeaf && node.leafIndex === leafIndex) {
       leaf = node;
       for (const n of trail) pathNodes.add(n);
       pathNodes.add(node);
+      // trail is root→parent; chain is leaf→root.
+      chain = [node, ...[...trail].reverse()];
       return true;
     }
     if (node.left && dfs(node.left, [...trail, node])) {
-      if (node.right) siblingNodes.add(node.right);
+      // Guard against duplicate mode (right === left): a node is not its own sibling.
+      if (node.right && node.right !== node.left) siblingNodes.add(node.right);
       return true;
     }
     if (node.right && dfs(node.right, [...trail, node])) {
-      if (node.left) siblingNodes.add(node.left);
+      if (node.left && node.left !== node.right) siblingNodes.add(node.left);
       return true;
     }
     return false;
   }
   dfs(tree.root, []);
-  return { pathNodes, siblingNodes, leaf };
+  return { pathNodes, siblingNodes, leaf, chain };
 }
 
 function nodeClasses(node: MerkleNode, path: PathInfo): string {
   const cls = ['mt-node'];
   cls.push(node.isLeaf ? 'mt-node--leaf' : 'mt-node--internal');
+  if (node === path.current) cls.push('mt-node--current');
   if (node === path.leaf) cls.push('mt-node--selected');
   else if (path.siblingNodes.has(node)) cls.push('mt-node--sibling');
   else if (path.pathNodes.has(node)) cls.push('mt-node--path');
@@ -129,7 +142,7 @@ function nodeClasses(node: MerkleNode, path: PathInfo): string {
 export function renderTree(
   container: HTMLElement,
   tree: MerkleTree,
-  path: PathInfo = { pathNodes: new Set(), siblingNodes: new Set(), leaf: null },
+  path: PathInfo = { pathNodes: new Set(), siblingNodes: new Set(), leaf: null, chain: [] },
 ): void {
   if (tree.leaves.length === 0) {
     container.innerHTML =

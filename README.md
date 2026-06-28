@@ -16,7 +16,7 @@ This is an interactive demo of **Merkle trees** and **Merkle inclusion proofs**,
 
 **[systemslibrarian.github.io/crypto-lab-merkle-proofs](https://systemslibrarian.github.io/crypto-lab-merkle-proofs/)**
 
-Add or remove data blocks to build a tree live, click any leaf to generate its inclusion proof, then verify the proof — recomputing the root from only the leaf and its sibling hashes. You can tamper with the leaf or flip a bit in any proof step and watch verification flip to REJECTED, scale a slider to see proofs stay logarithmic up to 2³⁰ leaves (and build real 256–4,096-leaf trees), and toggle RFC 6962 domain separation on and off to see the second-preimage forgery attack succeed and then be blocked.
+Add or remove data blocks to build a tree live, choose any leaf to generate its inclusion proof, then verify it — recomputing the root from only the leaf and its sibling hashes. You can **step through or animate** the recompute one hash at a time (watching the running hash climb the tree), expand **“show bytes”** on any step to see the exact SHA-256 preimage (`0x00 ∥ data` for leaves, `0x01 ∥ L ∥ R` for nodes), tamper with the leaf or flip a bit in any proof step and watch verification flip to REJECTED, and scale a slider to see proofs stay logarithmic up to 2³⁰ leaves (plus build real 256–4,096-leaf trees). Two security demos let you toggle RFC 6962 domain separation on/off to make the second-preimage forgery succeed then fail, and compare Bitcoin's odd-node duplication against RFC 6962 promotion to reproduce the **CVE-2012-2459** root collision. Predict-then-reveal prompts, self-check quizzes, and glossary tooltips support active learning.
 
 ## How to Run Locally
 

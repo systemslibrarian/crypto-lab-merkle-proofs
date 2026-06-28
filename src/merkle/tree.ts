@@ -1,15 +1,15 @@
 /**
  * tree.ts — Build a Merkle tree from a list of leaf payloads.
  *
- * Odd-node handling follows RFC 6962: a level with an odd number of nodes
- * promotes its last (lone) node up to the next level UNCHANGED — it is never
- * duplicated. Bitcoin instead duplicates the lone node (hash(x || x)), which
- * created the CVE-2012-2459 block-malleability bug. We avoid that by promotion;
- * the UI documents the difference as an edge case.
+ * Odd-node handling is selectable (see OddMode):
+ *  - 'promote'   (default) — RFC 6962: carry the lone node up UNCHANGED.
+ *  - 'duplicate'           — Bitcoin: hash the lone node with a copy of itself.
+ * The default is the safe RFC 6962 behavior; 'duplicate' exists so the Security
+ * panel can demonstrate the CVE-2012-2459 block-malleability bug it caused.
  */
 
 import { bytesToHex, hashLeaf, hashNode, sha256, utf8 } from './hash';
-import type { MerkleNode, MerkleTree } from './types';
+import type { MerkleNode, MerkleTree, OddMode } from './types';
 
 export interface LeafInput {
   readonly bytes: Uint8Array;
@@ -44,11 +44,12 @@ async function makeLeaf(
 export async function buildTree(
   inputs: readonly LeafInput[],
   domainSep = true,
+  oddMode: OddMode = 'promote',
 ): Promise<MerkleTree> {
   if (inputs.length === 0) {
     const hash = await sha256(new Uint8Array());
     const root: MerkleNode = { hash, hashHex: bytesToHex(hash), isLeaf: false };
-    return { root, leaves: [], levels: [[root]], domainSep };
+    return { root, leaves: [], levels: [[root]], domainSep, oddMode };
   }
 
   const leaves: MerkleNode[] = [];
@@ -65,8 +66,14 @@ export async function buildTree(
       const left = current[i];
       const right = current[i + 1];
       if (right === undefined) {
-        // Lone node: promote unchanged (RFC 6962), do not duplicate.
-        next.push(left);
+        if (oddMode === 'duplicate') {
+          // Bitcoin: pair the lone node with a copy of itself, hash(x ‖ x).
+          const hash = await hashNode(left.hash, left.hash, domainSep);
+          next.push({ hash, hashHex: bytesToHex(hash), isLeaf: false, left, right: left });
+        } else {
+          // RFC 6962: promote the lone node unchanged, do not duplicate.
+          next.push(left);
+        }
         continue;
       }
       const hash = await hashNode(left.hash, right.hash, domainSep);
@@ -76,13 +83,14 @@ export async function buildTree(
     current = next;
   }
 
-  return { root: current[0], leaves, levels, domainSep };
+  return { root: current[0], leaves, levels, domainSep, oddMode };
 }
 
 /** Convenience builder from plain strings. */
 export function buildTreeFromStrings(
   items: readonly string[],
   domainSep = true,
+  oddMode: OddMode = 'promote',
 ): Promise<MerkleTree> {
-  return buildTree(leavesFromStrings(items), domainSep);
+  return buildTree(leavesFromStrings(items), domainSep, oddMode);
 }

@@ -78,7 +78,9 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid var(--accent);
+  /* --accent-text (not --accent) so the ring keeps >=3:1 on white in light
+     theme too (WCAG 1.4.11 Non-text Contrast). */
+  outline: 3px solid var(--accent-text);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -155,7 +157,7 @@ input[type="text"], select {
   border-radius: var(--radius-sm); border: 1px solid var(--border);
   background: var(--bg-input); color: var(--text);
 }
-input[type="text"]:focus-visible, select:focus-visible { border-color: var(--accent); }
+input[type="text"]:focus-visible, select:focus-visible { border-color: var(--accent-text); }
 .preset-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
 .preset-label { color: var(--text-muted); font-size: 0.85rem; }
 
@@ -170,6 +172,7 @@ input[type="text"]:focus-visible, select:focus-visible { border-color: var(--acc
   border-radius: 999px; padding: 0.2rem 0.3rem 0.2rem 0.55rem; font-size: 0.85rem;
 }
 .mt-chip--selected { border-color: var(--accent); background: var(--accent-subtle); }
+.mt-chip-sel { color: var(--accent-text); font-weight: 700; margin-left: 0.15rem; }
 .mt-chip-idx {
   font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent-text);
   background: var(--bg-card); border-radius: 999px; padding: 0 0.4rem;
@@ -320,6 +323,78 @@ input[type="text"]:focus-visible, select:focus-visible { border-color: var(--acc
   text-align: center; padding: 2rem 1rem; font-size: 0.85rem;
   border-top: 1px solid var(--border); color: var(--text-muted); margin-top: 2rem;
 }
+
+/* ---------- Step-through walk ---------- */
+.walk-row { align-items: center; }
+.step-status { color: var(--text-muted); font-size: 0.85rem; }
+.mt-verdict--step { background: var(--accent-subtle); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); color: var(--text); }
+.mt-verdict--step .mt-verdict-icon { color: var(--accent-text); }
+.mt-trace-now { background: var(--accent-subtle); border-radius: var(--radius-sm); padding: 0.15rem 0.3rem; }
+.mt-bytes { margin: 0.2rem 0 0.2rem 2rem; }
+.mt-bytes summary { cursor: pointer; color: var(--accent-text); font-size: 0.78rem; }
+.mt-bytes code { display: block; margin-top: 0.3rem; font-size: 0.74rem; color: var(--text-muted); }
+
+/* current running node spotlight */
+.mt-node--current .mt-box { stroke: var(--accent-text); stroke-width: 3.5; }
+@media (prefers-reduced-motion: no-preference) {
+  .mt-node--current .mt-box { animation: mt-pulse 1.2s ease-in-out infinite; }
+}
+@keyframes mt-pulse {
+  0%, 100% { filter: none; }
+  50% { filter: drop-shadow(0 0 6px var(--accent)); }
+}
+
+/* ---------- Glossary tooltips (JS disclosure) ---------- */
+.glossary {
+  border-bottom: 1px dashed var(--accent-text); cursor: help;
+}
+/* Single shared tooltip element, fixed-positioned and viewport-clamped in JS so
+   it never clips; dismissible with Escape (WCAG 1.4.13). */
+.glossary-def {
+  position: fixed; z-index: 1500; max-width: min(22rem, 90vw);
+  background: var(--bg-card); color: var(--text);
+  border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  padding: 0.55rem 0.75rem; font-size: 0.82rem; line-height: 1.45;
+  box-shadow: var(--shadow);
+}
+.glossary-def[hidden] { display: none; }
+
+/* ---------- Predict-then-reveal ---------- */
+.predict {
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent); border-radius: var(--radius-sm);
+  padding: 0.8rem 0.9rem; margin: 0.9rem 0;
+}
+.predict-label {
+  display: inline-block; font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.06em; font-weight: 700; color: var(--accent-text); margin-bottom: 0.3rem;
+}
+.predict p { margin: 0.3rem 0; }
+.predict-answer { color: var(--text-muted); }
+
+/* ---------- Quizzes ---------- */
+.quiz-card {
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0.9rem; margin: 1.1rem 0;
+}
+.quiz-card h4 { margin-bottom: 0.3rem; }
+.quiz-card label { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.35rem 0; cursor: pointer; }
+.quiz-card input[type="radio"] { margin-top: 0.25rem; accent-color: var(--accent); min-width: 1.1rem; min-height: 1.1rem; }
+.quiz-fieldset { border: 0; padding: 0; margin: 0; }
+.quiz-fieldset legend { padding: 0; margin-bottom: 0.2rem; font-weight: 600; }
+.radio-set { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.quiz-explain { margin-top: 0.6rem; padding: 0.6rem 0.7rem; border-radius: var(--radius-sm); }
+.quiz-explain--right { background: var(--ok-bg); border: 1px solid var(--ok); }
+.quiz-explain--wrong { background: var(--bad-bg); border: 1px solid var(--bad); }
+
+/* ---------- Toast ---------- */
+.mt-toast {
+  position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%) translateY(1rem);
+  background: var(--bg-elev); color: var(--text); border: 1px solid var(--accent);
+  padding: 0.6rem 1rem; border-radius: 999px; font-size: 0.85rem; box-shadow: var(--shadow);
+  opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 2000;
+}
+.mt-toast--show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 @media (max-width: 560px) {
   .eff-bar-track { grid-template-columns: 1fr; }

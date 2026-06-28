@@ -153,14 +153,14 @@
     <!-- 1. What is a Merkle tree -->
     <section class="card" aria-labelledby="s-what">
       <h2 id="s-what">1 · What is a Merkle Tree?</h2>
-      <p>A <strong>Merkle tree</strong> is a binary tree of hashes. Each <em>leaf</em> holds the hash of one data block; each <em>internal node</em> holds the hash of its two children concatenated. The single hash at the top — the <strong>root</strong> — commits to every leaf at once: change any byte of any block and the root changes.</p>
-      <p>This demo uses real <strong>SHA-256</strong> via the browser's WebCrypto API, with <a href="https://www.rfc-editor.org/rfc/rfc6962#section-2.1" target="_blank" rel="noopener noreferrer">RFC 6962</a> domain separation:</p>
+      <p>A <strong>Merkle tree</strong> is a binary tree of hashes. Each <em>leaf</em> holds the hash of one data block; each <em>internal node</em> holds the hash of its two children concatenated. The single hash at the top — the <strong data-term="merkle-root">root</strong> — commits to every leaf at once: change any byte of any block and the root changes.</p>
+      <p>This demo uses real <strong>SHA-256</strong> via the browser's WebCrypto API, with <a href="https://www.rfc-editor.org/rfc/rfc6962#section-2.1" target="_blank" rel="noopener noreferrer">RFC 6962</a> <span data-term="domain-separation">domain separation</span>:</p>
       <ul class="formula-list">
         <li><code>leaf hash = SHA-256(0x00 ∥ data)</code></li>
         <li><code>node hash = SHA-256(0x01 ∥ left ∥ right)</code></li>
       </ul>
       <p class="mt-hint">A small 4-leaf tree (leaf order is left to right; the root sits on top):</p>
-      <div id="intro-diagram" class="tree-scroll" aria-label="Illustrative 4-leaf Merkle tree"></div>
+      <div id="intro-diagram" class="tree-scroll" tabindex="0" role="group" aria-label="Illustrative 4-leaf Merkle tree (scrollable)"></div>
     </section>
 
     <!-- 2. Interactive tree builder -->
@@ -186,7 +186,7 @@
       <p id="leaf-count" class="mt-note"></p>
 
       <p class="scroll-hint" aria-hidden="true">Wide trees scroll horizontally →</p>
-      <div id="tree-canvas" class="tree-scroll"></div>
+      <div id="tree-canvas" class="tree-scroll" tabindex="0" role="group" aria-label="Merkle tree (scrollable; use the leaf menu below to pick a leaf)"></div>
 
       <div class="root-box">
         <span class="root-label">Merkle root (SHA-256)</span>
@@ -227,15 +227,45 @@
           <button type="button" id="verify-tamper-leaf" class="mt-btn mt-btn--ghost">Tamper: change the leaf</button>
           <button type="button" id="verify-flip" class="mt-btn mt-btn--ghost">Tamper: flip a proof bit</button>
         </div>
+        <div class="btn-row walk-row">
+          <span class="preset-label">Walk it:</span>
+          <button type="button" id="verify-play" class="mt-btn mt-btn--ghost">Animate ▶</button>
+          <button type="button" id="verify-step" class="mt-btn mt-btn--ghost">Step ▸</button>
+          <span id="verify-step-status" class="step-status"></span>
+        </div>
+      </div>
+
+      <div class="predict">
+        <span class="predict-label">Predict</span>
+        <p>You flip one bit of a single sibling hash deep in the proof. Will verification still pass?</p>
+        <button type="button" class="predict-reveal mt-btn mt-btn--ghost" aria-expanded="false">Reveal answer</button>
+        <p class="predict-answer">No. That bit changes the parent hash, which changes <em>its</em> parent, all the way up — the recomputed root no longer matches. One bit anywhere in the leaf or proof is enough to break it. This is the avalanche property of SHA-256 plus the tree's hash chaining.</p>
       </div>
 
       <h3 class="sub">Proof steps (editable)</h3>
+      <p class="mt-hint">Each row is one <span data-term="inclusion-proof">sibling hash</span>. Flip a bit to see verification fail.</p>
       <div id="verify-steps" class="verify-steps"></div>
 
       <div id="verify-verdict" class="mt-verdict" role="status" aria-live="polite"></div>
 
       <h3 class="sub">Recomputation trace</h3>
+      <p class="mt-hint">The verifier recomputes the root from the leaf up. Expand “show bytes” on any line to see the exact input to SHA-256 — leaves are <code>0x00 ∥ data</code>, nodes are <code>0x01 ∥ left ∥ right</code>.</p>
       <div id="verify-trace" class="verify-trace"></div>
+
+      <div class="quiz-card"
+        data-correct="b"
+        data-why-correct="Exactly — the verifier only needs the leaf plus ⌈log₂ n⌉ sibling hashes, and recomputes the root itself. It never needs the other leaves or the trusted party to re-send the tree."
+        data-why-wrong="Re-read the trace: the verifier recomputes the root from just the leaf and the sibling hashes. It does not need the full tree, the other leaves, or to trust the prover.">
+        <h4>Self-check</h4>
+        <fieldset class="quiz-fieldset">
+          <legend>What does a verifier need to confirm a leaf is in the tree?</legend>
+          <label><input type="radio" name="q-verify" value="a"> The entire tree and all leaves.</label>
+          <label><input type="radio" name="q-verify" value="b"> Just the leaf, the proof (sibling hashes), and the trusted root.</label>
+          <label><input type="radio" name="q-verify" value="c"> The prover's private key.</label>
+        </fieldset>
+        <button type="button" class="quiz-check mt-btn mt-btn--ghost">Check</button>
+        <p class="quiz-explain" hidden></p>
+      </div>
     </section>
 
     <!-- 5. Efficiency & security -->
@@ -266,7 +296,7 @@
     <!-- 6. Security: second-preimage / domain separation -->
     <section class="card card--alert" aria-labelledby="s-sec">
       <h2 id="s-sec">6 · Security: Why the 0x00 / 0x01 Prefixes Matter</h2>
-      <p>Without domain separation, a leaf is hashed exactly like an internal node — so an attacker can take an internal node's two child hashes, glue them into a 64-byte "leaf", and prove inclusion of a leaf that <em>never existed</em>. This is the classic <strong>second-preimage</strong> (leaf-node confusion) attack. RFC 6962's 0x00/0x01 prefixes put leaf and node hashes in separate spaces and shut it down.</p>
+      <p>Without domain separation, a leaf is hashed exactly like an internal node — so an attacker can take an internal node's two child hashes, glue them into a 64-byte "leaf", and prove inclusion of a leaf that <em>never existed</em>. This is the classic <strong data-term="second-preimage">second-preimage</strong> (leaf-node confusion) attack. RFC 6962's 0x00/0x01 prefixes put leaf and node hashes in separate spaces and shut it down.</p>
 
       <div class="sec-controls">
         <label class="toggle">
@@ -279,6 +309,34 @@
       <div id="sec-status" class="mt-verdict" role="status" aria-live="polite"></div>
       <div id="sec-output" class="sec-output"></div>
       <p class="mt-hint">Turn the toggle <strong>off</strong> to see the forgery accepted (vulnerable), then back <strong>on</strong> to see it rejected. The main builder above always keeps domain separation on.</p>
+
+      <h3 class="sub">A second pitfall: odd-node handling (CVE-2012-2459)</h3>
+      <p>When a level has an odd number of nodes, something must be done with the lone node. <strong>Bitcoin duplicated it</strong> (<code>hash(x ∥ x)</code>), which let an attacker pad a block's transaction list with a repeated last transaction to get the <em>same</em> Merkle root — mutating blocks and splitting the network. <strong>RFC 6962 promotes</strong> the lone node unchanged, which has no such collision.</p>
+
+      <div class="sec-controls">
+        <div id="dup-mode" role="radiogroup" aria-label="Odd-node handling" class="radio-set">
+          <label class="toggle"><input type="radio" name="dup" value="duplicate" checked> Bitcoin: duplicate</label>
+          <label class="toggle"><input type="radio" name="dup" value="promote"> RFC 6962: promote</label>
+        </div>
+        <button type="button" id="dup-run" class="mt-btn mt-btn--primary">Compare roots</button>
+      </div>
+      <div id="dup-status" class="mt-verdict" role="status" aria-live="polite"></div>
+      <div id="dup-output" class="sec-output"></div>
+
+      <div class="quiz-card"
+        data-correct="c"
+        data-why-correct="Right. Because a leaf is 0x00-prefixed and a node is 0x01-prefixed, no leaf hash can ever equal a node hash, so an internal node can't be re-presented as a leaf."
+        data-why-wrong="Bigger hashes or more leaves don't help. The fix is structural: domain separation (0x00 for leaves, 0x01 for nodes) so the two hash spaces can never overlap.">
+        <h4>Self-check</h4>
+        <fieldset class="quiz-fieldset">
+          <legend>What actually prevents the second-preimage (leaf-as-node) forgery?</legend>
+          <label><input type="radio" name="q-sec" value="a"> Using SHA-512 instead of SHA-256.</label>
+          <label><input type="radio" name="q-sec" value="b"> Adding more leaves to the tree.</label>
+          <label><input type="radio" name="q-sec" value="c"> Domain separation: prefixing leaves with 0x00 and nodes with 0x01.</label>
+        </fieldset>
+        <button type="button" class="quiz-check mt-btn mt-btn--ghost">Check</button>
+        <p class="quiz-explain" hidden></p>
+      </div>
     </section>
 
     <!-- 7. Real-world applications -->
@@ -287,7 +345,7 @@
       <div class="app-grid">
         <div class="app">
           <h3>Bitcoin &amp; Ethereum</h3>
-          <p>Block headers commit to a Merkle root of all transactions. An <abbr title="Simplified Payment Verification">SPV</abbr> / light client proves a transaction is in a block with a short branch — no need to download the full chain.</p>
+          <p>Block headers commit to a Merkle root of all transactions. An <span data-term="spv"><abbr title="Simplified Payment Verification">SPV</abbr></span> / light client proves a transaction is in a block with a short branch — no need to download the full chain.</p>
         </div>
         <div class="app">
           <h3>Git</h3>

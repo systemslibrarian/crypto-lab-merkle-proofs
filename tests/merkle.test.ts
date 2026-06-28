@@ -182,3 +182,81 @@ describe('second-preimage attack (the reason domain separation exists)', () => {
     expect(res.ok).toBe(false); // defended
   });
 });
+
+describe('odd-node handling: Bitcoin duplication (CVE-2012-2459) vs RFC 6962 promotion', () => {
+  it("duplication makes [a,b,c] and [a,b,c,c] collide on the same root", async () => {
+    const t3 = await buildTreeFromStrings(['a', 'b', 'c'], true, 'duplicate');
+    const t4 = await buildTreeFromStrings(['a', 'b', 'c', 'c'], true, 'duplicate');
+    expect(t3.root.hashHex).toBe(t4.root.hashHex); // the malleability bug
+  });
+
+  it('promotion (RFC 6962) does NOT collide — the bug is fixed', async () => {
+    const t3 = await buildTreeFromStrings(['a', 'b', 'c'], true, 'promote');
+    const t4 = await buildTreeFromStrings(['a', 'b', 'c', 'c'], true, 'promote');
+    expect(t3.root.hashHex).not.toBe(t4.root.hashHex);
+  });
+
+  it('proofs round-trip in duplicate mode too', async () => {
+    const tree = await buildTreeFromStrings(['a', 'b', 'c', 'd', 'e'], true, 'duplicate');
+    for (let i = 0; i < 5; i++) {
+      const proof = generateProof(tree, i);
+      const res = await verifyProof(proof.leafData, proof.steps, tree.root.hashHex);
+      expect(res.ok, `leaf ${i}`).toBe(true);
+    }
+  });
+});
+
+describe('fuzz: agreement with an independent reference implementation', () => {
+  // Deterministic LCG so any failure reproduces.
+  let seed = 0x9e3779b9;
+  const rand = (): number => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0x100000000;
+  };
+  const randInt = (n: number): number => Math.floor(rand() * n);
+
+  // Independent reference: the RECURSIVE RFC 6962 §2.1 Merkle Tree Hash
+  // (split at the largest power of two < n). This is a structurally different
+  // algorithm from buildTree's iterative level-by-level pairing, so a shared
+  // bug cannot hide in both — exactly what an independent oracle should be.
+  async function mthRFC6962(items: string[], domainSep: boolean): Promise<Uint8Array> {
+    if (items.length === 0) return sha256(new Uint8Array());
+    if (items.length === 1) return hashLeaf(utf8(items[0]), domainSep);
+    let k = 1;
+    while (k * 2 < items.length) k *= 2; // largest power of two strictly < n
+    const left = await mthRFC6962(items.slice(0, k), domainSep);
+    const right = await mthRFC6962(items.slice(k), domainSep);
+    return hashNode(left, right, domainSep);
+  }
+
+  it('40 random trees: buildTree root matches the recursive RFC 6962 reference', async () => {
+    for (let t = 0; t < 40; t++) {
+      const n = 1 + randInt(40);
+      const domainSep = rand() > 0.5;
+      const items = Array.from({ length: n }, () => `x${randInt(1000)}-${randInt(1000)}`);
+      const tree = await buildTree(leavesFromStrings(items), domainSep);
+      expect(tree.root.hashHex, `n=${n} domainSep=${domainSep}`).toBe(
+        bytesToHex(await mthRFC6962(items, domainSep)),
+      );
+
+      const idx = randInt(n);
+      const proof = generateProof(tree, idx);
+      const res = await verifyProof(proof.leafData, proof.steps, tree.root.hashHex, domainSep);
+      expect(res.ok, `proof leaf ${idx} of ${n}`).toBe(true);
+    }
+  });
+
+  it('20 random trees in DUPLICATE mode: every proof round-trips against the root', async () => {
+    for (let t = 0; t < 20; t++) {
+      const n = 1 + randInt(30);
+      const domainSep = rand() > 0.5;
+      const items = Array.from({ length: n }, () => `d${randInt(1000)}-${randInt(1000)}`);
+      const tree = await buildTree(leavesFromStrings(items), domainSep, 'duplicate');
+      for (let i = 0; i < n; i++) {
+        const proof = generateProof(tree, i);
+        const res = await verifyProof(proof.leafData, proof.steps, tree.root.hashHex, domainSep);
+        expect(res.ok, `dup n=${n} leaf ${i}`).toBe(true);
+      }
+    }
+  });
+});

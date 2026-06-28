@@ -4,12 +4,16 @@
  * all operate on this one tree + selection so the story stays continuous.
  */
 
-import { utf8 } from '../merkle/hash';
+import { utf8, bytesToHex } from '../merkle/hash';
 import { buildTreeFromStrings } from '../merkle/tree';
 import { generateProof, verifyProof, expectedProofLength } from '../merkle/proof';
-import type { MerkleProof, MerkleTree, ProofStep } from '../merkle/types';
+import type { MerkleProof, MerkleTree, ProofStep, VerifyResult } from '../merkle/types';
 import { qs, esc, copyText } from './dom';
-import { renderTree, findPath } from './tree-svg';
+import { renderTree, findPath, type PathInfo } from './tree-svg';
+import { toast } from './toast';
+
+const prefersReducedMotion = (): boolean =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const MAX_LEAVES = 16;
 const SAMPLE = ['alice', 'bob', 'carol', 'dave', 'erin', 'frank'];
@@ -20,9 +24,12 @@ interface State {
   selected: number | null;
   tree: MerkleTree | null;
   proof: MerkleProof | null;
+  path: PathInfo | null;
   // Verification working copy (may be tampered):
   vLeaf: string;
   vSteps: ProofStep[];
+  vResult: VerifyResult | null;
+  reveal: number; // how many recompute steps are shown (step-through)
 }
 
 const state: State = {
@@ -30,8 +37,11 @@ const state: State = {
   selected: 0,
   tree: null,
   proof: null,
+  path: null,
   vLeaf: '',
   vSteps: [],
+  vResult: null,
+  reveal: 0,
 };
 
 let canvas: HTMLElement;
@@ -45,6 +55,7 @@ let verifyLeaf: HTMLInputElement;
 let verifySteps: HTMLElement;
 let verifyTrace: HTMLElement;
 let verifyVerdict: HTMLElement;
+let stepStatus: HTMLElement;
 let srStatus: HTMLElement;
 
 export function mountExplorer(): void {
@@ -59,6 +70,7 @@ export function mountExplorer(): void {
   verifySteps = qs('#verify-steps');
   verifyTrace = qs('#verify-trace');
   verifyVerdict = qs('#verify-verdict');
+  stepStatus = qs('#verify-step-status');
   srStatus = qs('#sr-status');
 
   // Builder controls
@@ -88,12 +100,14 @@ export function mountExplorer(): void {
     runVerify();
   });
   qs('#verify-flip').addEventListener('click', flipFirstStep);
+  qs('#verify-step').addEventListener('click', stepForward);
+  qs('#verify-play').addEventListener('click', () => void playWalk());
   verifyLeaf.addEventListener('input', () => {
     state.vLeaf = verifyLeaf.value;
   });
 
   const copyRoot = (): void => {
-    if (state.tree) void copyText(state.tree.root.hashHex);
+    if (state.tree) void copyText(state.tree.root.hashHex).then((ok) => toast(ok ? 'Root hash copied' : 'Copy failed'));
   };
   rootHash.addEventListener('click', copyRoot);
   rootHash.addEventListener('keydown', (e) => {
@@ -197,8 +211,8 @@ function renderLeafSelect(): void {
 function syncSelection(): void {
   if (!state.tree) return;
   if (state.selected !== null) leafSelect.value = String(state.selected);
-  const path = findPath(state.tree, state.selected);
-  renderTree(canvas, state.tree, path);
+  state.path = findPath(state.tree, state.selected);
+  renderTree(canvas, state.tree, state.path);
 
   if (state.selected === null || state.tree.leaves.length === 0) {
     state.proof = null;
@@ -207,6 +221,7 @@ function syncSelection(): void {
     verifyVerdict.className = 'mt-verdict';
     verifyVerdict.innerHTML = '';
     verifySteps.innerHTML = '';
+    stepStatus.textContent = '';
     return;
   }
 
@@ -216,6 +231,13 @@ function syncSelection(): void {
     `Selected leaf ${state.proof.leafIndex}, "${state.proof.leafLabel}". Proof is ${state.proof.steps.length} sibling hash${state.proof.steps.length === 1 ? '' : 'es'}.`,
   );
   resetVerify();
+}
+
+/** Redraw the tree, optionally spotlighting the running node at the current step. */
+function redrawTree(): void {
+  if (!state.tree || !state.path) return;
+  const current = state.path.chain[state.reveal] ?? null;
+  renderTree(canvas, state.tree, { ...state.path, current });
 }
 
 function announce(msg: string): void {
@@ -229,11 +251,16 @@ function renderLeafChips(): void {
   }
   leafList.innerHTML = state.leaves
     .map(
-      (l, i) =>
-        `<span class="mt-chip${i === state.selected ? ' mt-chip--selected' : ''}">` +
-        `<span class="mt-chip-idx">${i}</span>${esc(l)}` +
-        `<button type="button" class="mt-chip-x" data-remove="${i}" aria-label="Remove leaf ${i} (${esc(l)})">×</button>` +
-        `</span>`,
+      (l, i) => {
+        const sel = i === state.selected;
+        return (
+          `<span class="mt-chip${sel ? ' mt-chip--selected' : ''}"${sel ? ' aria-current="true"' : ''}>` +
+          (sel ? '<span class="mt-chip-sel" aria-hidden="true">✓</span>' : '') +
+          `<span class="mt-chip-idx">${i}</span>${esc(l)}` +
+          `<button type="button" class="mt-chip-x" data-remove="${i}" aria-label="Remove leaf ${i} (${esc(l)})">×</button>` +
+          `</span>`
+        );
+      },
     )
     .join('');
 }
@@ -292,7 +319,7 @@ function renderVerifySteps(): void {
         `<div class="mt-vstep">` +
         `<code class="mt-mono">${s.siblingHex}</code>` +
         `<span class="mt-side--${s.side}">${s.side}</span>` +
-        `<button type="button" class="mt-btn mt-btn--ghost" data-flip="${i}">flip a bit</button>` +
+        `<button type="button" class="mt-btn mt-btn--ghost" data-flip="${i}" aria-label="Flip a bit in proof step ${i + 1}">flip a bit</button>` +
         `</div>`,
     )
     .join('');
@@ -323,6 +350,7 @@ function hex(bytes: Uint8Array): string {
 }
 
 let verifyToken = 0;
+/** Recompute the proof and fully reveal it (jump to the end). */
 async function runVerify(): Promise<void> {
   if (!state.tree || state.selected === null) return;
   state.vLeaf = verifyLeaf.value;
@@ -331,32 +359,111 @@ async function runVerify(): Promise<void> {
   const res = await verifyProof(utf8(state.vLeaf), state.vSteps, expected, true);
   // A newer verify started while we were hashing — discard this stale result.
   if (token !== verifyToken) return;
+  state.vResult = res;
+  state.reveal = res.steps.length; // fully revealed
+  renderStep();
+}
 
-  const trace = res.steps
-    .map(
-      (s) =>
-        `<li><span class="mt-trace-i">${s.index + 1}</span> ` +
-        `hash(${s.side === 'left' ? `<code class="mt-mono">${short(s.siblingHex)}</code> ∥ <code class="mt-mono">${short(s.inputHex)}</code>` : `<code class="mt-mono">${short(s.inputHex)}</code> ∥ <code class="mt-mono">${short(s.siblingHex)}</code>`}) = <code class="mt-mono">${short(s.outputHex)}</code></li>`,
-    )
-    .join('');
+/** Render the recompute trace up to state.reveal, the tree spotlight, and the
+ *  verdict (shown only once every step is revealed). `announceVerdict=false`
+ *  leaves the live verdict region untouched (used during animation to avoid
+ *  spamming a screen reader every tick). */
+function renderStep(announceVerdict = true): void {
+  const res = state.vResult;
+  if (!res) return;
+  const total = res.steps.length;
+  state.reveal = Math.max(0, Math.min(state.reveal, total));
+  const leafHex = bytesToHex(utf8(state.vLeaf));
 
+  const lines: string[] = [
+    `<li class="mt-trace-leaf"><span class="mt-trace-i">0</span> ` +
+      `leaf hash of <code>${esc(state.vLeaf)}</code> = <code class="mt-mono">${short(res.steps[0]?.inputHex ?? res.computedRootHex)}</code>` +
+      bytesDetail(`SHA-256( 00 ∥ ${leafHex} )`) +
+      `</li>`,
+  ];
+  for (let i = 0; i < state.reveal; i++) {
+    const s = res.steps[i];
+    const combine =
+      s.side === 'left'
+        ? `<code class="mt-mono">${short(s.siblingHex)}</code> ∥ <code class="mt-mono">${short(s.inputHex)}</code>`
+        : `<code class="mt-mono">${short(s.inputHex)}</code> ∥ <code class="mt-mono">${short(s.siblingHex)}</code>`;
+    const preimage =
+      s.side === 'left' ? `SHA-256( 01 ∥ ${s.siblingHex} ∥ ${s.inputHex} )` : `SHA-256( 01 ∥ ${s.inputHex} ∥ ${s.siblingHex} )`;
+    lines.push(
+      `<li${i === state.reveal - 1 ? ' class="mt-trace-now"' : ''}><span class="mt-trace-i">${i + 1}</span> ` +
+        `hash(${combine}) = <code class="mt-mono">${short(s.outputHex)}</code>` +
+        bytesDetail(preimage) +
+        `</li>`,
+    );
+  }
+
+  const fully = state.reveal === total;
   verifyTrace.innerHTML =
-    `<ol class="mt-trace">` +
-    `<li class="mt-trace-leaf"><span class="mt-trace-i">0</span> leaf hash of <code>${esc(state.vLeaf)}</code></li>` +
-    trace +
-    `</ol>` +
-    `<div class="mt-roots">` +
-    `<div><span class="mt-root-label">Recomputed root</span><code class="mt-mono ${res.ok ? 'mt-ok' : 'mt-bad'}">${res.computedRootHex}</code></div>` +
-    `<div><span class="mt-root-label">Trusted root</span><code class="mt-mono">${res.expectedRootHex}</code></div>` +
-    `</div>`;
+    `<ol class="mt-trace">${lines.join('')}</ol>` +
+    (fully
+      ? `<div class="mt-roots">` +
+        `<div><span class="mt-root-label">Recomputed root</span><code class="mt-mono ${res.ok ? 'mt-ok' : 'mt-bad'}">${res.computedRootHex}</code></div>` +
+        `<div><span class="mt-root-label">Trusted root</span><code class="mt-mono">${res.expectedRootHex}</code></div>` +
+        `</div>`
+      : '');
 
-  if (res.ok) {
+  stepStatus.textContent = total === 0 ? '' : `Step ${state.reveal} of ${total}`;
+
+  redrawTree();
+  if (!announceVerdict) return; // animation tick: don't touch the live verdict
+
+  if (!fully) {
+    verifyVerdict.className = 'mt-verdict mt-verdict--step';
+    verifyVerdict.innerHTML = `<span class="mt-verdict-icon" aria-hidden="true">▸</span> Climbing the tree… step ${state.reveal} of ${total}.`;
+  } else if (res.ok) {
     verifyVerdict.className = 'mt-verdict mt-verdict--ok';
     verifyVerdict.innerHTML = '<span class="mt-verdict-icon" aria-hidden="true">✓</span> <strong>INCLUDED</strong> — recomputed root matches the trusted root. The leaf is provably in the tree.';
   } else {
     verifyVerdict.className = 'mt-verdict mt-verdict--bad';
     verifyVerdict.innerHTML = '<span class="mt-verdict-icon" aria-hidden="true">✕</span> <strong>REJECTED</strong> — recomputed root does not match. The leaf or proof was altered, so inclusion cannot be proven.';
   }
+}
+
+function bytesDetail(preimage: string): string {
+  return (
+    `<details class="mt-bytes"><summary>show bytes</summary>` +
+    `<code class="mt-mono mt-wrap">${preimage}</code></details>`
+  );
+}
+
+/** Step-through: reveal one more recompute step. Wraps back to 0 at the end. */
+function stepForward(): void {
+  if (!state.vResult) return;
+  const total = state.vResult.steps.length;
+  state.reveal = state.reveal >= total ? 0 : state.reveal + 1;
+  renderStep();
+}
+
+let playTimer: number | undefined;
+/** Animate the walk from the leaf to the root (instant if reduced-motion). */
+async function playWalk(): Promise<void> {
+  if (!state.vResult) return;
+  const total = state.vResult.steps.length;
+  if (playTimer) clearInterval(playTimer);
+  if (prefersReducedMotion() || total === 0) {
+    state.reveal = total;
+    renderStep();
+    return;
+  }
+  state.reveal = 0;
+  // One spoken cue for the whole animation; ticks update visuals silently.
+  verifyVerdict.className = 'mt-verdict mt-verdict--step';
+  verifyVerdict.innerHTML = '<span class="mt-verdict-icon" aria-hidden="true">▸</span> Animating the climb from leaf to root…';
+  renderStep(false);
+  playTimer = window.setInterval(() => {
+    if (!state.vResult || state.reveal >= state.vResult.steps.length) {
+      if (playTimer) clearInterval(playTimer);
+      return;
+    }
+    state.reveal += 1;
+    const last = state.reveal >= state.vResult.steps.length;
+    renderStep(last); // announce only the final verdict
+  }, 700);
 }
 
 function short(h: string): string {

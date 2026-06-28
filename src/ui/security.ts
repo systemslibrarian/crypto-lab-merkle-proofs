@@ -37,7 +37,7 @@ export function mountSecurity(): void {
       status.className = 'mt-verdict mt-verdict--ok';
       status.innerHTML =
         '<span class="mt-verdict-icon" aria-hidden="true">✓</span> <strong>FORGERY REJECTED</strong> — ' +
-        'domain separation holds. A leaf hash (0x00-prefixed) can never collide with an internal-node hash (0x01-prefixed).';
+        'domain separation holds. A leaf (0x00-prefixed) and an internal node (0x01-prefixed) are hashed over disjoint inputs, so an internal node can no longer be re-presented as a leaf.';
     }
 
     out.innerHTML =
@@ -51,5 +51,55 @@ export function mountSecurity(): void {
 
   toggle.addEventListener('change', run);
   qs('#sec-run').addEventListener('click', run);
+  void run();
+
+  mountDuplicationDemo();
+}
+
+/**
+ * CVE-2012-2459 — Bitcoin's odd-node DUPLICATION lets two different transaction
+ * lists ([a,b,c] and [a,b,c,c]) hash to the SAME Merkle root, which an attacker
+ * used to mutate blocks and split/DoS the network. RFC 6962 PROMOTION doesn't.
+ */
+const DUP_A = ['tx-a', 'tx-b', 'tx-c'];
+const DUP_B = ['tx-a', 'tx-b', 'tx-c', 'tx-c']; // last tx duplicated
+
+function mountDuplicationDemo(): void {
+  const modeInputs = qs('#dup-mode');
+  const out = qs('#dup-output');
+  const status = qs('#dup-status');
+
+  async function run(): Promise<void> {
+    const mode = (modeInputs.querySelector<HTMLInputElement>('input:checked')?.value ?? 'duplicate') as
+      | 'duplicate'
+      | 'promote';
+    const [ra, rb] = await Promise.all([
+      buildTreeFromStrings(DUP_A, true, mode),
+      buildTreeFromStrings(DUP_B, true, mode),
+    ]);
+    const collide = ra.root.hashHex === rb.root.hashHex;
+
+    if (collide) {
+      status.className = 'mt-verdict mt-verdict--bad';
+      status.innerHTML =
+        '<span class="mt-verdict-icon" aria-hidden="true">⚠</span> <strong>ROOTS COLLIDE</strong> — ' +
+        'two different transaction lists produced the same root. A block can be mutated without changing its Merkle root (CVE-2012-2459).';
+    } else {
+      status.className = 'mt-verdict mt-verdict--ok';
+      status.innerHTML =
+        '<span class="mt-verdict-icon" aria-hidden="true">✓</span> <strong>ROOTS DIFFER</strong> — ' +
+        'duplicating the last transaction changes the root, so the mutation is detectable.';
+    }
+
+    out.innerHTML =
+      `<dl class="mt-sec-detail">` +
+      `<dt>Odd-node rule</dt><dd>${mode === 'duplicate' ? 'Bitcoin <strong>duplication</strong> — hash(x ∥ x)' : 'RFC 6962 <strong>promotion</strong> — carry x up unchanged'}</dd>` +
+      `<dt>List A — [${DUP_A.join(', ')}]</dt><dd><code class="mt-mono mt-wrap">${ra.root.hashHex}</code></dd>` +
+      `<dt>List B — [${DUP_B.join(', ')}]</dt><dd><code class="mt-mono mt-wrap">${rb.root.hashHex}</code></dd>` +
+      `</dl>`;
+  }
+
+  modeInputs.addEventListener('change', run);
+  qs('#dup-run').addEventListener('click', run);
   void run();
 }

@@ -61,14 +61,6 @@ export function concatBytes(...arrays: Uint8Array[]): Uint8Array {
   return out;
 }
 
-/** Constant-time-ish equality on two byte arrays (length + value). */
-export function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-  return diff === 0;
-}
-
 /** Raw SHA-256 via WebCrypto. */
 export async function sha256(data: Uint8Array): Promise<Uint8Array> {
   // Cast to BufferSource: TS 5.7's generic Uint8Array<ArrayBufferLike> isn't

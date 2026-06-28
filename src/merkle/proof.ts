@@ -47,7 +47,13 @@ export function generateProof(tree: MerkleTree, leafIndex: number): MerkleProof 
         // If we are the right child, the sibling is on our left, and vice versa.
         side: isRightChild ? 'left' : 'right',
       });
+    } else if (tree.oddMode === 'duplicate') {
+      // Bitcoin: the lone node is paired with a copy of itself, so its sibling
+      // is itself, sitting on the right (we are the left child of hash(x ‖ x)).
+      const self = nodes[index];
+      steps.push({ siblingHash: self.hash, siblingHex: self.hashHex, side: 'right' });
     }
+    // else (promote): no step — the node simply rises to its parent.
     index = Math.floor(index / 2);
   }
 

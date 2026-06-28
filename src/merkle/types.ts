@@ -10,6 +10,14 @@
 /** Which side of the running hash a proof sibling sits on. */
 export type Side = 'left' | 'right';
 
+/**
+ * How a level with an odd number of nodes is handled:
+ *  - 'promote'   — carry the lone node up unchanged (RFC 6962; safe)
+ *  - 'duplicate' — pair the lone node with a copy of itself, hash(x‖x)
+ *                  (Bitcoin; source of the CVE-2012-2459 malleability bug)
+ */
+export type OddMode = 'promote' | 'duplicate';
+
 export interface MerkleNode {
   /** Raw 32-byte SHA-256 digest for this node. */
   readonly hash: Uint8Array;
@@ -32,6 +40,8 @@ export interface MerkleTree {
   readonly levels: readonly (readonly MerkleNode[])[];
   /** Whether RFC 6962 domain separation was used to build this tree. */
   readonly domainSep: boolean;
+  /** How odd levels were handled. */
+  readonly oddMode: OddMode;
 }
 
 /** One step of an inclusion (audit) path: a sibling hash and which side it's on. */
