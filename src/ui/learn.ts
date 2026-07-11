@@ -34,6 +34,10 @@ function mountGlossary(): void {
   tip.className = 'glossary-def';
   tip.id = 'glossary-tip';
   tip.setAttribute('role', 'tooltip');
+  // Give the shared tooltip a stable accessible name so the node is always
+  // valid even before any term populates it (its text becomes the name once
+  // opened; the label is the fallback while empty).
+  tip.setAttribute('aria-label', 'Glossary definition');
   tip.hidden = true;
   document.body.appendChild(tip);
 
