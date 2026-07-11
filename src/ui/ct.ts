@@ -27,7 +27,7 @@ export function mountCT(): void {
     `<dt>Log</dt><dd>${CT_FIXTURE.logName} — <code class="mt-mono">${CT_FIXTURE.logUrl}</code></dd>` +
     `<dt>Tree size when fetched (${CT_FIXTURE.fetchedOn})</dt><dd><strong>${fmt(CT_FIXTURE.treeSize)}</strong> certificates</dd>` +
     `<dt>Entry #${fmt(CT_FIXTURE.leafIndex)}</dt><dd>${CT_FIXTURE.entryKind} for <code>${CT_FIXTURE.certSubject}</code> (issuer: ${CT_FIXTURE.certIssuer}), logged ${CT_FIXTURE.loggedAt}</dd>` +
-    `<dt>Leaf input</dt><dd>${leafInput.length} bytes — the log's exact <code>MerkleTreeLeaf</code> structure, hashed as <code>SHA-256(0x00 ∥ bytes)</code> like every leaf in this lab</dd>` +
+    `<dt>Leaf input</dt><dd>${fmt(leafInput.length)} bytes — the log's exact <code>MerkleTreeLeaf</code> structure, hashed as <code>SHA-256(0x00 ∥ bytes)</code> like every leaf in this lab</dd>` +
     `<dt>Audit path</dt><dd><strong>${path.length}</strong> hashes (${fmt(path.length * 32)} bytes) — ⌈log₂ ${fmt(CT_FIXTURE.treeSize)}⌉ = ${Math.ceil(Math.log2(CT_FIXTURE.treeSize))}</dd>` +
     `<dt>Trusted root (from the log's signed tree head)</dt><dd><code class="mt-mono mt-wrap mt-copy" title="Click to copy">${rootHex}</code></dd>` +
     `</dl>`;
@@ -76,7 +76,7 @@ export function mountCT(): void {
       `<ol class="mt-steps">${rows}</ol>` +
       `<p class="mt-hint">Recomputed root: <code class="mt-mono mt-wrap ${res.ok ? 'mt-ok' : 'mt-bad'}">${res.computedRootHex}</code></p>` +
       `</details>` +
-      `<details class="mt-bytes"><summary>show the raw ${input.length}-byte leaf (MerkleTreeLeaf: version ∥ type ∥ timestamp ∥ the certificate)</summary>` +
+      `<details class="mt-bytes"><summary>show the raw ${fmt(input.length)}-byte leaf (MerkleTreeLeaf: version ∥ type ∥ timestamp ∥ the certificate)</summary>` +
       `<code class="mt-mono mt-wrap">${bytesToHex(input)}</code></details>`;
   }
 

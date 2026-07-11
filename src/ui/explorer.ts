@@ -70,6 +70,9 @@ export function decodeUrlState(hash: string): { leaves: string[]; selected: numb
 
 function writeUrlState(): void {
   if (typeof history === 'undefined') return;
+  // Never clobber a plain anchor link (#s-cons etc.) — only manage a hash
+  // this module owns. The share button stamps explicitly regardless.
+  if (location.hash && !location.hash.startsWith('#leaves=')) return;
   const isDefault =
     state.selected === 0 &&
     state.leaves.length === SAMPLE.length &&
