@@ -125,14 +125,28 @@ export function findPath(tree: MerkleTree, leafIndex: number | null): PathInfo {
   return { pathNodes, siblingNodes, leaf, chain };
 }
 
-function nodeClasses(node: MerkleNode, path: PathInfo): string {
+function nodeClasses(node: MerkleNode, path: PathInfo, decor?: Map<MerkleNode, NodeDecor>): string {
   const cls = ['mt-node'];
   cls.push(node.isLeaf ? 'mt-node--leaf' : 'mt-node--internal');
   if (node === path.current) cls.push('mt-node--current');
   if (node === path.leaf) cls.push('mt-node--selected');
   else if (path.siblingNodes.has(node)) cls.push('mt-node--sibling');
   else if (path.pathNodes.has(node)) cls.push('mt-node--path');
+  const d = decor?.get(node);
+  if (d?.cls) cls.push(d.cls);
   return cls.join(' ');
+}
+
+/** Extra per-node styling for views beyond the inclusion path (e.g. the
+ *  consistency view's old-prefix shading and proof-hash markers). */
+export interface NodeDecor {
+  cls?: string;
+  marker?: string;
+}
+
+export interface RenderOpts {
+  decor?: Map<MerkleNode, NodeDecor>;
+  ariaLabel?: string;
 }
 
 /**
@@ -143,6 +157,7 @@ export function renderTree(
   container: HTMLElement,
   tree: MerkleTree,
   path: PathInfo = { pathNodes: new Set(), siblingNodes: new Set(), leaf: null, chain: [] },
+  opts: RenderOpts = {},
 ): void {
   if (tree.leaves.length === 0) {
     container.innerHTML =
@@ -175,14 +190,15 @@ export function renderTree(
     // Non-color state marker so proof participation is conveyed by SHAPE+TEXT,
     // not color alone (WCAG 1.4.1). Legend in the page maps each glyph.
     const marker =
-      node === path.leaf ? '●' : path.siblingNodes.has(node) ? '◆' : path.pathNodes.has(node) ? '↑' : '';
+      opts.decor?.get(node)?.marker ??
+      (node === path.leaf ? '●' : path.siblingNodes.has(node) ? '◆' : path.pathNodes.has(node) ? '↑' : '');
     const clickable = node.isLeaf ? ' mt-node--clickable' : '';
     // data-leaf-index drives mouse clicks as a visual convenience; the
     // <select> in section 3 is the accessible/keyboard path. We do NOT mark
     // these as role="button", because an SVG with role="img" hides descendants.
     const attrs = node.isLeaf ? ` data-leaf-index="${node.leafIndex}"` : '';
     boxes.push(
-      `<g class="${nodeClasses(node, path)}${clickable}"${attrs}>` +
+      `<g class="${nodeClasses(node, path, opts.decor)}${clickable}"${attrs}>` +
         `<rect class="mt-box" x="${left}" y="${top}" width="${BOX_W}" height="${BOX_H}" rx="8" />` +
         (marker ? `<text class="mt-marker" x="${left + BOX_W - 8}" y="${top + 16}">${marker}</text>` : '') +
         `<text class="mt-tag" x="${x}" y="${top + 17}">${tag}${label ? ': ' + label : ''}</text>` +
@@ -193,8 +209,8 @@ export function renderTree(
 
   // Describe the whole figure (and current selection) for assistive tech, since
   // the textual proof list mirrors what the colors show.
-  let aria = `Merkle tree with ${tree.leaves.length} leaf nodes`;
-  if (path.leaf && path.leaf.leafIndex !== undefined) {
+  let aria = opts.ariaLabel ?? `Merkle tree with ${tree.leaves.length} leaf nodes`;
+  if (!opts.ariaLabel && path.leaf && path.leaf.leafIndex !== undefined) {
     aria += `. Leaf ${path.leaf.leafIndex}${path.leaf.label ? ' (' + path.leaf.label + ')' : ''} is selected; its proof is ${path.siblingNodes.size} sibling hashes shown with a diamond marker.`;
   }
 

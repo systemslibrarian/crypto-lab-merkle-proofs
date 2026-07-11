@@ -44,6 +44,41 @@ const state: State = {
   reveal: 0,
 };
 
+/**
+ * Deep-linkable state — `#leaves=a,b,c&sel=2` — so an instructor can share a
+ * link that reproduces an exact tree + selection. Each leaf is URI-encoded, so
+ * literal commas/ampersands in leaf text survive the round-trip.
+ */
+export function encodeUrlState(leaves: readonly string[], selected: number | null): string {
+  let h = `leaves=${leaves.map(encodeURIComponent).join(',')}`;
+  if (selected !== null) h += `&sel=${selected}`;
+  return h;
+}
+
+export function decodeUrlState(hash: string): { leaves: string[]; selected: number | null } | null {
+  const h = hash.replace(/^#/, '');
+  const m = /(?:^|&)leaves=([^&]*)/.exec(h);
+  if (!m) return null;
+  const leaves = (m[1] === '' ? [] : m[1].split(',').map(decodeURIComponent))
+    .map((s) => s.slice(0, 48))
+    .slice(0, MAX_LEAVES);
+  const sm = /(?:^|&)sel=(\d+)/.exec(h);
+  const sel = sm ? Number(sm[1]) : null;
+  const selected = sel !== null && sel < leaves.length ? sel : leaves.length ? 0 : null;
+  return { leaves, selected };
+}
+
+function writeUrlState(): void {
+  if (typeof history === 'undefined') return;
+  const isDefault =
+    state.selected === 0 &&
+    state.leaves.length === SAMPLE.length &&
+    state.leaves.every((l, i) => l === SAMPLE[i]);
+  // Don't stamp the URL until it says something a plain visit doesn't.
+  if (isDefault && !location.hash) return;
+  history.replaceState(null, '', `#${encodeUrlState(state.leaves, state.selected)}`);
+}
+
 let canvas: HTMLElement;
 let leafList: HTMLElement;
 let leafInput: HTMLInputElement;
@@ -81,6 +116,19 @@ export function mountExplorer(): void {
   qs('#preset-sample').addEventListener('click', () => setLeaves([...SAMPLE]));
   qs('#preset-tx').addEventListener('click', () => setLeaves([...TX_BLOCK]));
   qs('#preset-clear').addEventListener('click', () => setLeaves([]));
+  qs('#share-link').addEventListener('click', () => {
+    history.replaceState(null, '', `#${encodeUrlState(state.leaves, state.selected)}`);
+    void copyText(location.href).then((ok) =>
+      toast(ok ? 'Link to this exact tree copied' : 'Copy failed'),
+    );
+  });
+
+  // Restore a shared tree from the URL, if one was linked.
+  const fromUrl = decodeUrlState(location.hash);
+  if (fromUrl) {
+    state.leaves = fromUrl.leaves;
+    state.selected = fromUrl.selected;
+  }
 
   leafList.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-remove]');
@@ -159,6 +207,7 @@ function selectLeaf(i: number): void {
   if (i < 0 || i >= state.leaves.length) return;
   state.selected = i;
   syncSelection();
+  writeUrlState();
 }
 
 let countTimer: number | undefined;
@@ -192,6 +241,7 @@ async function refresh(): Promise<void> {
   else if (state.selected === null) state.selected = 0;
   renderLeafSelect(); // option list only changes when the leaf set changes
   syncSelection();
+  writeUrlState();
 }
 
 function renderLeafSelect(): void {

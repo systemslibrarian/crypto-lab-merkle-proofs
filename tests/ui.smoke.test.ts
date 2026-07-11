@@ -38,12 +38,16 @@ beforeAll(async () => {
   const { mountEfficiency } = await import('../src/ui/efficiency');
   const { mountSecurity } = await import('../src/ui/security');
   const { mountConsistency } = await import('../src/ui/consistency');
+  const { mountTrust } = await import('../src/ui/trust');
+  const { mountCT } = await import('../src/ui/ct');
   const { mountLearn } = await import('../src/ui/learn');
   // Should not throw — every qs() target must exist in index.html.
   mountExplorer();
   mountEfficiency();
   mountSecurity();
   mountConsistency();
+  mountTrust();
+  mountCT();
   mountLearn();
   await until(() => /^[0-9a-f]{64}$/.test(text('#root-hash')));
 });
@@ -155,10 +159,89 @@ describe('consistency (append-only) proof wiring', () => {
     expect(document.querySelectorAll('#cons-log .mt-chip').length).toBeGreaterThan(0);
   });
 
+  it('renders the prefix-embedding tree with shaded old nodes and proof markers', async () => {
+    await until(() => document.querySelector('#cons-canvas svg') !== null);
+    expect(document.querySelectorAll('#cons-canvas .mt-node--old').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('#cons-canvas .mt-node--consproof').length).toBeGreaterThan(0);
+  });
+
   it('rewriting an early entry is caught as NOT CONSISTENT', async () => {
     document.querySelector<HTMLButtonElement>('#cons-tamper')!.click();
     await until(() => text('#cons-status').includes('NOT CONSISTENT'));
     expect(text('#cons-status')).toContain('NOT CONSISTENT');
+  });
+
+  it('deleting an entry is caught as NOT CONSISTENT', async () => {
+    document.querySelector<HTMLButtonElement>('#cons-run')!.click();
+    await until(() => !text('#cons-status').includes('NOT CONSISTENT'));
+    document.querySelector<HTMLButtonElement>('#cons-tamper-delete')!.click();
+    await until(() => text('#cons-status').includes('NOT CONSISTENT'));
+    expect(document.querySelectorAll('#cons-log .mt-chip--altered').length).toBeGreaterThan(0);
+  });
+
+  it('reordering two entries is caught as NOT CONSISTENT', async () => {
+    document.querySelector<HTMLButtonElement>('#cons-run')!.click();
+    await until(() => !text('#cons-status').includes('NOT CONSISTENT'));
+    document.querySelector<HTMLButtonElement>('#cons-tamper-reorder')!.click();
+    await until(() => text('#cons-status').includes('NOT CONSISTENT'));
+    expect(text('#cons-status')).toContain('NOT CONSISTENT');
+  });
+});
+
+describe('trust-model (where the root comes from) wiring', () => {
+  it('an honest out-of-band root reads as meaningful inclusion', async () => {
+    document.querySelector<HTMLButtonElement>('#trust-honest')!.click();
+    await until(() => text('#trust-status').includes('MEANS SOMETHING'));
+    expect(text('#trust-output')).toContain('out-of-band');
+  });
+
+  it('a prover-supplied root verifies but is flagged as proving nothing', async () => {
+    document.querySelector<HTMLButtonElement>('#trust-attack')!.click();
+    await until(() => text('#trust-status').includes('PROVES NOTHING'));
+    expect(text('#trust-status')).toContain('VERIFIES');
+    expect(text('#trust-output')).toContain('Mallory');
+  });
+});
+
+describe('real Certificate Transparency entry wiring', () => {
+  it('renders the pinned log facts', () => {
+    expect(text('#ct-facts')).toContain('2,807,499,968');
+    expect(text('#ct-facts')).toContain('drvpn.cdm.ge');
+  });
+
+  it('the real proof verifies as INCLUDED against the pinned root', async () => {
+    document.querySelector<HTMLButtonElement>('#ct-run')!.click();
+    await until(() => text('#ct-status').includes('INCLUDED'));
+    expect(text('#ct-output')).toContain('32');
+  });
+
+  it('one flipped certificate bit is REJECTED', async () => {
+    document.querySelector<HTMLButtonElement>('#ct-tamper')!.click();
+    await until(() => text('#ct-status').includes('REJECTED'));
+    expect(text('#ct-status')).toContain('REJECTED');
+  });
+});
+
+describe('deep-linkable URL state', () => {
+  it('encode/decode round-trips leaves with commas and ampersands', async () => {
+    const { encodeUrlState, decodeUrlState } = await import('../src/ui/explorer');
+    const leaves = ['plain', 'with,comma', 'with&amp', 'ünïcode'];
+    const decoded = decodeUrlState('#' + encodeUrlState(leaves, 2));
+    expect(decoded).not.toBeNull();
+    expect(decoded!.leaves).toEqual(leaves);
+    expect(decoded!.selected).toBe(2);
+  });
+
+  it('clamps an out-of-range selection and ignores unrelated hashes', async () => {
+    const { decodeUrlState, encodeUrlState } = await import('../src/ui/explorer');
+    expect(decodeUrlState('#s-recap')).toBeNull();
+    expect(decodeUrlState('#' + encodeUrlState(['a', 'b'], 9))!.selected).toBe(0);
+  });
+
+  it('Copy link stamps the current tree into the URL', async () => {
+    document.querySelector<HTMLButtonElement>('#share-link')!.click();
+    await until(() => location.hash.includes('leaves='));
+    expect(location.hash).toContain('leaves=');
   });
 });
 

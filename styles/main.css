@@ -400,8 +400,37 @@ input[type="text"]:focus-visible, select:focus-visible { border-color: var(--acc
 }
 .mt-toast--show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ---------- Learning objectives + recap ---------- */
+.card--objectives { border-left: 3px solid var(--accent); }
+.objectives { margin: 0.3rem 0 0.3rem 1.2rem; display: grid; gap: 0.35rem; }
+.objectives li { line-height: 1.45; }
+.reading-list { margin: 0.3rem 0 0.3rem 1.2rem; display: grid; gap: 0.45rem; font-size: 0.92rem; }
+.reading-list a { color: var(--accent-text); }
+.table-scroll { overflow-x: auto; }
+.mt-recap-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 34rem; }
+.mt-recap-table th, .mt-recap-table td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.mt-recap-table thead th { color: var(--accent-text); }
+.mt-recap-table tbody th { color: var(--text-muted); font-weight: 600; width: 11rem; }
+
+/* ---------- Consistency view: old prefix + proof-hash markers ---------- */
+/* The old size-m tree is a shaded region; proof hashes get diamond markers.
+   ◆ (filled, amber like inclusion siblings) = subtree root inside the prefix;
+   ◇ (outline, accent) = subtree root in the appended region. Shape+text carry
+   the state (WCAG 1.4.1); the legend maps each glyph. */
+.mt-node--old .mt-box { fill: var(--accent-subtle); }
+.mt-node--consproof .mt-box { stroke: var(--amber); stroke-width: 2.5; }
+.mt-node--consproof:not(.mt-node--old) .mt-box { stroke: var(--accent-text); }
+.mt-node--consproof .mt-marker { fill: var(--amber); }
+.mt-node--consproof:not(.mt-node--old) .mt-marker { fill: var(--accent-text); }
+.legend-old { background: var(--accent-subtle); border: 1px solid var(--accent); }
+.legend-mark--proofnew { color: var(--accent-text); }
+.mt-chip--old { background: var(--accent-subtle); }
+.mt-chip--altered { border-color: var(--bad); }
+.mt-chip-warn { color: var(--bad); font-weight: 700; margin-left: 0.2rem; }
+
 @media (max-width: 560px) {
   .eff-bar-track { grid-template-columns: 1fr; }
   .eff-bar-label { text-align: left; }
   .mt-eff-table th { width: auto; }
+  .mt-recap-table tbody th { width: auto; }
 }

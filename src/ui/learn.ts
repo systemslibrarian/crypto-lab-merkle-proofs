@@ -21,6 +21,10 @@ const GLOSSARY: Record<string, string> = {
     'Tagging leaf inputs with 0x00 and node inputs with 0x01 so a leaf hash can never be mistaken for a node hash.',
   spv:
     'Simplified Payment Verification — a light client that confirms a transaction is in a block using only a short Merkle proof.',
+  'consistency-proof':
+    'The sibling-subtree hashes proving an old tree of size m is an exact prefix of a newer tree of size n — the log only appended, never rewrote.',
+  'signed-tree-head':
+    "A log's (root hash, tree size, timestamp) signed with the log's key. Clients gossip and compare STHs so a log can't show different histories to different people.",
 };
 
 function mountGlossary(): void {

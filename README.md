@@ -16,7 +16,7 @@ This is an interactive demo of **Merkle trees** and **Merkle inclusion proofs**,
 
 **[systemslibrarian.github.io/crypto-lab-merkle-proofs](https://systemslibrarian.github.io/crypto-lab-merkle-proofs/)**
 
-Add or remove data blocks to build a tree live, choose any leaf to generate its inclusion proof, then verify it — recomputing the root from only the leaf and its sibling hashes. You can **step through or animate** the recompute one hash at a time (watching the running hash climb the tree), expand **“show bytes”** on any step to see the exact SHA-256 preimage (`0x00 ∥ data` for leaves, `0x01 ∥ L ∥ R` for nodes), tamper with the leaf or flip a bit in any proof step and watch verification flip to REJECTED, and scale a slider to see proofs stay logarithmic up to 2³⁰ leaves (plus build real 256–4,096-leaf trees). Two security demos let you toggle RFC 6962 domain separation on/off to make the second-preimage forgery succeed then fail, and compare Bitcoin's odd-node duplication against RFC 6962 promotion to reproduce the **CVE-2012-2459** root collision. Predict-then-reveal prompts, self-check quizzes, and glossary tooltips support active learning.
+Add or remove data blocks to build a tree live, choose any leaf to generate its inclusion proof, then verify it — recomputing the root from only the leaf and its sibling hashes. You can **step through or animate** the recompute one hash at a time (watching the running hash climb the tree), expand **“show bytes”** on any step to see the exact SHA-256 preimage (`0x00 ∥ data` for leaves, `0x01 ∥ L ∥ R` for nodes), tamper with the leaf or flip a bit in any proof step and watch verification flip to REJECTED, and scale a slider to see proofs stay logarithmic up to 2³⁰ leaves (plus build real 256–4,096-leaf trees). A **trust-model demo** stages the classic misconception directly: a prover who supplies leaf, proof, *and root* produces a triple that verifies — and proves nothing. Two security demos let you toggle RFC 6962 domain separation on/off to make the second-preimage forgery succeed then fail, and compare Bitcoin's odd-node duplication against RFC 6962 promotion to reproduce the **CVE-2012-2459** root collision. **Consistency (append-only) proofs** get their own visualization — the old tree shaded inside the new one, with the proof's subtree roots marked — plus three history-tampering attacks (rewrite, delete, reorder) that the proof catches. Finally, the page verifies a **real Certificate Transparency entry**: a pinned Let's Encrypt certificate at index 1,234,567,890 of Google's Argon2026h1 log (2.8 billion certificates), proven included with 32 hashes using RFC 9162 index-based verification — the same code path as the rest of the lab. Learning objectives, predict-then-reveal prompts, self-check quizzes, glossary tooltips, a recap table, and further reading support active learning; **“Copy link to this tree”** deep-links any tree state for slides or assignments.
 
 ## How to Run Locally
 
@@ -27,7 +27,11 @@ npm install
 npm run dev
 ```
 
-There are no environment variables. Run the test suite (RFC 6962 vectors, proof round-trips, tamper rejection, and the second-preimage attack/defense) with `npm test`.
+There are no environment variables. Run the test suite (RFC 6962 vectors, proof round-trips, tamper rejection, the second-preimage attack/defense, consistency proofs, fuzzing against an independent reference implementation, and the pinned real-world CT proof) with `npm test`.
+
+## Teaching With It
+
+See **[TEACHING.md](TEACHING.md)** for an instructor guide: a 50-minute lesson flow, discussion questions, the misconceptions each section is designed to break, and homework extensions.
 
 ## Part of the Crypto-Lab Suite
 

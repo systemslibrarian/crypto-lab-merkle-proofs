@@ -13,6 +13,8 @@ import { mountExplorer } from './ui/explorer';
 import { mountEfficiency } from './ui/efficiency';
 import { mountSecurity } from './ui/security';
 import { mountConsistency } from './ui/consistency';
+import { mountTrust } from './ui/trust';
+import { mountCT } from './ui/ct';
 import { mountLearn } from './ui/learn';
 import { copyText } from './ui/dom';
 import { toast } from './ui/toast';
@@ -44,6 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
   mountEfficiency();
   mountSecurity();
   mountConsistency();
+  mountTrust();
+  mountCT();
   mountLearn();
   // Let the synchronous initial renders settle, then make the regions live.
   setTimeout(activateLiveRegions, 0);

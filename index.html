@@ -150,6 +150,19 @@
   <p id="sr-status" class="sr-only" data-live></p>
 
   <main>
+    <!-- 0. Learning objectives -->
+    <section class="card card--objectives" aria-labelledby="s-goals">
+      <h2 id="s-goals">What you'll be able to do</h2>
+      <ul class="objectives">
+        <li>Build a Merkle tree and explain what its root <em>commits</em> to.</li>
+        <li>Generate and verify an inclusion proof by hand — and say why it's only <code>⌈log₂ n⌉</code> hashes.</li>
+        <li>Explain where the trusted root must come from, and why a proof without that is worthless.</li>
+        <li>Break two real constructions: the second-preimage forgery (no domain separation) and CVE-2012-2459 (odd-node duplication).</li>
+        <li>Verify a consistency proof and state exactly what "append-only" does and doesn't guarantee.</li>
+        <li>Verify a real Certificate Transparency entry — production data, in this page, offline.</li>
+      </ul>
+    </section>
+
     <!-- 1. What is a Merkle tree -->
     <section class="card" aria-labelledby="s-what">
       <h2 id="s-what">1 · What is a Merkle Tree?</h2>
@@ -179,6 +192,7 @@
           <button type="button" id="preset-sample" class="mt-btn mt-btn--ghost">Sample names</button>
           <button type="button" id="preset-tx" class="mt-btn mt-btn--ghost">Block of transactions</button>
           <button type="button" id="preset-clear" class="mt-btn mt-btn--ghost">Clear</button>
+          <button type="button" id="share-link" class="mt-btn mt-btn--ghost" title="Copies a URL that reproduces this exact tree and selection">Copy link to this tree</button>
         </div>
       </div>
 
@@ -252,6 +266,23 @@
       <p class="mt-hint">The verifier recomputes the root from the leaf up. Expand “show bytes” on any line to see the exact input to SHA-256 — leaves are <code>0x00 ∥ data</code>, nodes are <code>0x01 ∥ left ∥ right</code>.</p>
       <div id="verify-trace" class="verify-trace"></div>
 
+      <h3 class="sub">Where does the trusted root come from?</h3>
+      <p>Everything above assumed the verifier already holds the right root. That assumption is the <em>entire</em> security model. A proof only ties a leaf to <em>some</em> root — if the person making the claim also hands you the root, they can build a tree around any lie.</p>
+
+      <div class="predict">
+        <span class="predict-label">Predict</span>
+        <p>Mallory invents a fake transaction, builds her own Merkle tree around it, and sends you the leaf, the proof, <em>and the root</em>. Does verification pass?</p>
+        <button type="button" class="predict-reveal mt-btn mt-btn--ghost" aria-expanded="false">Reveal answer</button>
+        <p class="predict-answer">Yes — perfectly. The hashes are all real SHA-256 and all self-consistent. Verification can never tell you the root is the <em>agreed-upon</em> one; only the channel that delivered the root can. That's why Bitcoin roots live in mined block headers and CT roots come as <span data-term="signed-tree-head">signed tree heads</span> that clients gossip and compare.</p>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" id="trust-honest" class="mt-btn mt-btn--primary">Root from a trusted channel</button>
+        <button type="button" id="trust-attack" class="mt-btn mt-btn--ghost">Attack: prover supplies the root too</button>
+      </div>
+      <div id="trust-status" class="mt-verdict" data-live></div>
+      <div id="trust-output" class="sec-output"></div>
+
       <div class="quiz-card"
         data-correct="b"
         data-why-correct="Exactly — the verifier only needs the leaf plus ⌈log₂ n⌉ sibling hashes, and recomputes the root itself. It never needs the other leaves or the trusted party to re-send the tree."
@@ -291,6 +322,23 @@
         <button type="button" class="mt-btn mt-btn--ghost" data-n="4096">4,096 leaves</button>
       </div>
       <div id="eff-build-out" class="eff-build-out"></div>
+
+      <p class="mt-hint">In the wild: a Bitcoin block with ~3,000 transactions (~1.5&nbsp;MB) needs a <strong>12-hash proof — 384 bytes</strong> — for an <span data-term="spv"><abbr title="Simplified Payment Verification">SPV</abbr></span> wallet to confirm a payment. Certificate Transparency logs hold <strong>billions</strong> of certificates and still prove any one of them in <strong>32 hashes ≈ 1&nbsp;KB</strong> — you'll verify a real one in section 8.</p>
+
+      <div class="quiz-card"
+        data-correct="a"
+        data-why-correct="Right — ⌈log₂ 1,000,000,000⌉ = 30. Doubling the tree adds ONE hash to the proof; that's the whole trick."
+        data-why-wrong="Proof size is the tree's HEIGHT, not its width: ⌈log₂ n⌉. For a billion leaves that's ⌈log₂ 10⁹⌉ = 30 hashes — under a kilobyte.">
+        <h4>Self-check</h4>
+        <fieldset class="quiz-fieldset">
+          <legend>A tree commits to one billion leaves. Roughly how many hashes are in one inclusion proof?</legend>
+          <label><input type="radio" name="q-eff" value="a"> About 30.</label>
+          <label><input type="radio" name="q-eff" value="b"> About 30,000.</label>
+          <label><input type="radio" name="q-eff" value="c"> About a million.</label>
+        </fieldset>
+        <button type="button" class="quiz-check mt-btn mt-btn--ghost">Check</button>
+        <p class="quiz-explain" hidden></p>
+      </div>
     </section>
 
     <!-- 6. Security: second-preimage / domain separation -->
@@ -342,9 +390,10 @@
     <!-- 7. Consistency (append-only) proofs -->
     <section class="card" aria-labelledby="s-cons">
       <h2 id="s-cons">7 · Consistency (Append-Only) Proofs</h2>
-      <p>Everything above proves <em>inclusion</em> — that one leaf is in the tree. A <strong>consistency proof</strong> answers a different question that logs care about: is the old tree of size <code>m</code> an exact <strong>prefix</strong> of the new tree of size <code>n</code> — i.e. did the log only <em>append</em>, never rewrite history? This is the guarantee <a href="https://www.rfc-editor.org/rfc/rfc6962#section-2.1.2" target="_blank" rel="noopener noreferrer">Certificate Transparency</a> is built on.</p>
+      <p>Everything above proves <em>inclusion</em> — that one leaf is in the tree. A <strong data-term="consistency-proof">consistency proof</strong> answers a different question that logs care about: is the old tree of size <code>m</code> an exact <strong>prefix</strong> of the new tree of size <code>n</code> — i.e. did the log only <em>append</em>, never rewrite history? This is the guarantee <a href="https://www.rfc-editor.org/rfc/rfc6962#section-2.1.2" target="_blank" rel="noopener noreferrer">Certificate Transparency</a> is built on.</p>
+      <p><strong>Why it works:</strong> the old root is stitched together from a few complete subtrees — and those exact subtrees still sit, byte-for-byte, inside the new tree. The proof hands the auditor just enough subtree roots to rebuild <em>both</em> the remembered old root and the claimed new root. If the same handful of hashes can reproduce both, nothing before entry <code>m</code> changed.</p>
 
-      <p class="mt-hint">The log (a growing list of certificates):</p>
+      <p class="mt-hint">The log (a growing list of certificates; shaded = the old size-m prefix):</p>
       <div id="cons-log" class="leaf-list" aria-label="Append-only log entries"></div>
 
       <div class="select-row">
@@ -353,21 +402,73 @@
         <label for="cons-new">New size (n)</label>
         <select id="cons-new"></select>
         <button type="button" id="cons-run" class="mt-btn mt-btn--primary">Prove consistency</button>
-        <button type="button" id="cons-tamper" class="mt-btn mt-btn--ghost">Rewrite history (entry 0)</button>
+      </div>
+
+      <ul class="legend" aria-label="Consistency tree highlight key">
+        <li><span class="legend-swatch legend-old" aria-hidden="true"></span> the old size-m tree (shaded prefix)</li>
+        <li><span class="legend-mark legend-mark--proof" aria-hidden="true">◆</span> proof hash inside the prefix — rebuilds the <strong>old</strong> root, then reused for the new one</li>
+        <li><span class="legend-mark legend-mark--proofnew" aria-hidden="true">◇</span> proof hash in the appended region — completes the <strong>new</strong> root</li>
+      </ul>
+      <div id="cons-canvas" class="tree-scroll" tabindex="0" role="group" aria-label="New tree with the old prefix embedded (scrollable)"></div>
+
+      <div class="predict">
+        <span class="predict-label">Predict</span>
+        <p>The log operator deletes one early entry but keeps appending, so the log is still growing. Will the consistency proof still verify?</p>
+        <button type="button" class="predict-reveal mt-btn mt-btn--ghost" aria-expanded="false">Reveal answer</button>
+        <p class="predict-answer">No. "Append-only" means every old entry must stay at its exact position. A deletion shifts every later leaf one slot left, which changes every subtree containing them — the remembered old root can no longer be rebuilt from the new tree's subtrees. Same for reordering: same contents, different positions, different hashes. Try both below.</p>
+      </div>
+
+      <div class="btn-row">
+        <span class="preset-label">Attack the log:</span>
+        <button type="button" id="cons-tamper" class="mt-btn mt-btn--ghost">Rewrite entry 0</button>
+        <button type="button" id="cons-tamper-delete" class="mt-btn mt-btn--ghost">Delete an early entry</button>
+        <button type="button" id="cons-tamper-reorder" class="mt-btn mt-btn--ghost">Swap entries 0 ↔ 1</button>
       </div>
 
       <div id="cons-status" class="mt-verdict" data-live></div>
       <div id="cons-output" class="sec-output"></div>
-      <p class="mt-hint">“Rewrite history” keeps the auditor’s remembered old root but alters an early entry in the new log — the consistency proof then fails, exposing the tampering.</p>
+      <p class="mt-hint">Every attack keeps the auditor's <em>remembered</em> old root but alters the log the operator presents — the consistency proof then fails, exposing the tampering. Entries marked <strong>≠</strong> are where the presented log differs from the original. <strong>Honest limit:</strong> tampering is only caught if it touches entries the old root committed to (positions &lt; m) — a change entirely after position m is invisible to <em>this</em> old root, which is why auditors keep requesting fresh signed tree heads.</p>
+
+      <div class="quiz-card"
+        data-correct="b"
+        data-why-correct="Exactly. Consistency proves the first m entries are unchanged and everything else is purely appended — nothing more. It says nothing about whether the entries themselves are good, or whether YOUR certificate is in there (that's an inclusion proof)."
+        data-why-wrong="A consistency proof only compares two tree heads. It proves the size-m log is an untouched prefix of the size-n log — not that entries are valid (the log stores what it's given) and not that any particular entry is present (that's an inclusion proof).">
+        <h4>Self-check</h4>
+        <fieldset class="quiz-fieldset">
+          <legend>You hold last month's root (size m) and today's root (size n). What does a valid consistency proof convince you of?</legend>
+          <label><input type="radio" name="q-cons" value="a"> Every certificate in the log is legitimate.</label>
+          <label><input type="radio" name="q-cons" value="b"> The first m entries are exactly what they were — the log only appended.</label>
+          <label><input type="radio" name="q-cons" value="c"> Your own certificate is somewhere in the log.</label>
+        </fieldset>
+        <button type="button" class="quiz-check mt-btn mt-btn--ghost">Check</button>
+        <p class="quiz-explain" hidden></p>
+      </div>
     </section>
 
-    <!-- 8. Real-world applications -->
+    <!-- 8. Verify a real Certificate Transparency entry -->
+    <section class="card" aria-labelledby="s-ct">
+      <h2 id="s-ct">8 · Verify a REAL Certificate Transparency Entry</h2>
+      <p>Everything so far used toy data. This section uses <strong>none</strong>. Below is a real entry from Google's Argon2026h1 CT log — a Let's Encrypt certificate that actually protects a real website — together with the real audit path the log served, pinned so it verifies offline forever. The verifier here is the <em>same RFC 6962 construction</em> you've been stepping through: <code>SHA-256(0x00 ∥ leaf)</code>, <code>SHA-256(0x01 ∥ L ∥ R)</code>.</p>
+      <p>One production difference: a real log doesn't send left/right flags with the proof. The verifier <em>derives</em> each side from the entry's index and the tree size by walking the index's bits (<a href="https://www.rfc-editor.org/rfc/rfc9162#section-2.1.3.2" target="_blank" rel="noopener noreferrer">RFC 9162 §2.1.3.2</a>) — expand the steps below to see the derived sides.</p>
+
+      <div id="ct-facts"></div>
+
+      <div class="btn-row">
+        <button type="button" id="ct-run" class="mt-btn mt-btn--primary">Verify the real proof</button>
+        <button type="button" id="ct-tamper" class="mt-btn mt-btn--ghost">Tamper: flip one bit of the certificate</button>
+      </div>
+      <div id="ct-status" class="mt-verdict" data-live></div>
+      <div id="ct-output" class="sec-output"></div>
+      <p class="mt-hint">In production the verifier also checks the log's ECDSA signature over the tree head (the <span data-term="signed-tree-head">signed tree head</span>); here that head is pinned into the page instead. The tree had <strong>2,807,499,968</strong> certificates when fetched — and one flipped bit anywhere in this 1,033-byte certificate entry still breaks all 32 hashes above it.</p>
+    </section>
+
+    <!-- 9. Real-world applications -->
     <section class="card" aria-labelledby="s-apps">
-      <h2 id="s-apps">8 · Where Merkle Proofs Are Used</h2>
+      <h2 id="s-apps">9 · Where Merkle Proofs Are Used</h2>
       <div class="app-grid">
         <div class="app">
           <h3>Bitcoin &amp; Ethereum</h3>
-          <p>Block headers commit to a Merkle root of all transactions. An <span data-term="spv"><abbr title="Simplified Payment Verification">SPV</abbr></span> / light client proves a transaction is in a block with a short branch — no need to download the full chain.</p>
+          <p>Block headers commit to a Merkle root of all transactions. An <span data-term="spv"><abbr title="Simplified Payment Verification">SPV</abbr></span> / light client proves a transaction is in a block with a short branch — no need to download the full chain. <em>Caveat if you try this at home:</em> Bitcoin's construction differs from this lab's — double SHA-256, byte-reversed txids, no domain separation (hence section 6's CVE), so its roots won't match an RFC 6962 tree.</p>
         </div>
         <div class="app">
           <h3>Git</h3>
@@ -375,13 +476,50 @@
         </div>
         <div class="app">
           <h3>Certificate Transparency</h3>
-          <p>CT logs (RFC 6962 — the exact construction here) publish a Merkle root so anyone can prove a certificate was logged and that the log is append-only.</p>
+          <p>CT logs (RFC 6962 — the exact construction here) publish a Merkle root so anyone can prove a certificate was logged and that the log is append-only. Section 8 verifies a real entry from a live log.</p>
         </div>
         <div class="app">
           <h3>Stateless / light clients</h3>
           <p>Merkle (and Verkle) proofs let a client check that an account balance or state value is part of a committed root without holding the whole state tree.</p>
         </div>
       </div>
+    </section>
+
+    <!-- 10. Recap -->
+    <section class="card" aria-labelledby="s-recap">
+      <h2 id="s-recap">10 · Recap: The Two Proofs, Side by Side</h2>
+      <div class="table-scroll" tabindex="0" role="group" aria-label="Comparison of inclusion and consistency proofs (scrollable)">
+        <table class="mt-recap-table">
+          <thead>
+            <tr><th scope="col"></th><th scope="col">Inclusion proof (§3–4)</th><th scope="col">Consistency proof (§7)</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Question answered</th><td>"Is this leaf in the tree?"</td><td>"Is the old tree an untouched prefix of the new one?"</td></tr>
+            <tr><th scope="row">Verifier holds</th><td>the leaf + the trusted root</td><td>the old root + the new root</td></tr>
+            <tr><th scope="row">Prover sends</th><td>sibling hashes up the leaf's path</td><td>the subtree roots that rebuild both roots</td></tr>
+            <tr><th scope="row">Size</th><td><code>⌈log₂ n⌉</code> hashes</td><td><code>≈ log₂ n</code> hashes</td></tr>
+            <tr><th scope="row">Who runs it</th><td>light clients, SPV wallets, browsers</td><td>log auditors and monitors</td></tr>
+            <tr><th scope="row">What it can NOT prove</th><td>absence, order, or that the root is the agreed-upon one (§4)</td><td>that entries are valid, or that any specific entry is present</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">Test yourself (no peeking)</h3>
+      <ul class="objectives">
+        <li>Sketch a 4-leaf tree from memory and mark exactly which hashes a proof for leaf 2 contains.</li>
+        <li>Explain to a rubber duck why the 0x00/0x01 prefixes are load-bearing and not decoration.</li>
+        <li>State the one thing verification can never tell you about the root — and where real systems get it instead.</li>
+        <li>Say what breaks if a log deletes an entry, in terms of leaf positions and subtree hashes.</li>
+      </ul>
+
+      <h3 class="sub">Further reading</h3>
+      <ul class="reading-list">
+        <li><a href="https://www.ralphmerkle.com/papers/Certified1979.pdf" target="_blank" rel="noopener noreferrer">Merkle 1979 — <em>Secrecy, Authentication, and Public Key Systems</em></a> (Ch. 5 introduces "tree authentication" — this whole page in ~10 pages of 1979 typewriter)</li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc6962" target="_blank" rel="noopener noreferrer">RFC 6962 — Certificate Transparency</a> (§2.1 is the exact construction this lab implements) and its successor <a href="https://www.rfc-editor.org/rfc/rfc9162" target="_blank" rel="noopener noreferrer">RFC 9162</a> (§2.1.3.2/§2.1.4.2 are the verification algorithms used here)</li>
+        <li><a href="https://bitcoin.org/bitcoin.pdf" target="_blank" rel="noopener noreferrer">Nakamoto 2008 — Bitcoin whitepaper</a> (§7–8: Merkle trees for block compaction and SPV)</li>
+        <li><a href="https://certificate.transparency.dev/howctworks/" target="_blank" rel="noopener noreferrer">How CT works — certificate.transparency.dev</a> (the ecosystem around the math: logs, monitors, gossip)</li>
+        <li><a href="https://nvd.nist.gov/vuln/detail/CVE-2012-2459" target="_blank" rel="noopener noreferrer">CVE-2012-2459</a> (the odd-node duplication bug you reproduced in section 6)</li>
+      </ul>
     </section>
   </main>
 </div>
