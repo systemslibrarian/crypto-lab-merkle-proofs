@@ -135,21 +135,21 @@
 <!-- END crypto-lab shared header -->
 
 <div id="app">
-  <div class="page-header">
-    <span class="category-chip">Hashing · Data Structures</span>
-    <h1 class="page-title">Merkle Tree Proofs</h1>
-    <p class="page-subtitle">Build a tree, prove one leaf is in it with a handful of hashes, and verify it without the whole tree.</p>
-    <ul class="chip-row" aria-label="Primitives used">
-      <li class="chip">SHA-256</li>
-      <li class="chip">RFC 6962</li>
-      <li class="chip">Inclusion Proof</li>
-      <li class="chip">WebCrypto</li>
-    </ul>
-  </div>
-
   <p id="sr-status" class="sr-only" data-live></p>
 
   <main>
+    <header class="cl-hero">
+      <div class="cl-hero-main">
+        <h1 class="cl-hero-title">Merkle Proofs</h1>
+        <p class="cl-hero-sub">Inclusion &amp; Consistency · SHA-256 · RFC 6962</p>
+        <p class="cl-hero-desc">Build a Merkle tree, then generate and verify inclusion and consistency proofs against its root using RFC 6962 domain separation.</p>
+      </div>
+      <aside class="cl-hero-why" aria-label="Why it matters">
+        <span class="cl-hero-why-label">WHY IT MATTERS</span>
+        <p class="cl-hero-why-text">One tiny root commits to millions of records, and a handful of hashes proves any one is in the set — without the whole set. This is how Bitcoin light clients, Git, and Certificate Transparency stay honest at scale.</p>
+      </aside>
+    </header>
+
     <!-- 0. Learning objectives -->
     <section class="card card--objectives" aria-labelledby="s-goals">
       <h2 id="s-goals">What you'll be able to do</h2>
