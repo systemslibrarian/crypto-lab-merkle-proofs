@@ -14,6 +14,15 @@
   --text: #e6edf6;
   --text-muted: #9fb0c5;
   --border: #28354d;
+  /* Control boundaries only (WCAG 2.1 SC 1.4.11). Text inputs and selects are
+     filled with --bg-input (#0f1827 dark, #ffffff light), which is 1.09:1
+     against --bg and 1.35:1 against --bg-card in the dark theme and the
+     literal same hex as --bg-card in the light one, so the border is the only
+     thing delineating the field. #6c7585 keeps the palette's blue neutral and
+     clears 3:1 on every surface a control sits on: 4.02:1 on --bg, 3.66:1 on
+     --bg-card, 3.21:1 on --bg-elev. --border is left unchanged for decorative
+     rules — card outlines, table rules, tree edges, dividers. */
+  --border-strong: #6c7585;
   --accent: #10b981;
   --accent-hover: #34d399;
   /* Text-safe accent: used wherever the accent is TEXT/icon, so it meets 4.5:1.
@@ -42,6 +51,9 @@
   --text: #14213d;
   --text-muted: #54627a;
   --border: #d7dee8;
+  /* Same fix, other direction: 3.50:1 on --bg, 3.76:1 on --bg-card/--bg-input,
+     3.34:1 on --bg-elev. */
+  --border-strong: #7c8494;
   --accent: #10b981;
   --accent-hover: #059669;
   --accent-text: #047857;
@@ -167,7 +179,7 @@ a { color: var(--accent-text); }
 .leaf-add-row input { flex: 1; min-width: 0; }
 input[type="text"], select {
   font: inherit; font-size: 1rem; min-height: 2.75rem; padding: 0.5rem 0.7rem;
-  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); border: 1px solid var(--border-strong);
   background: var(--bg-input); color: var(--text);
 }
 input[type="text"]:focus-visible, select:focus-visible { border-color: var(--accent-text); }
