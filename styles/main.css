@@ -425,6 +425,21 @@ input[type="text"]:focus-visible, select:focus-visible { border-color: var(--acc
 }
 .mt-toast--show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ---------- "Where this sits" scope note ---------- */
+/* The link uses --accent-text, the same ink .reading-list already uses against a
+   card background, so it clears the contrast level the axe gate enforces. */
+.scope-note {
+  margin: 1.1rem 0 0;
+  padding: 0.85rem 1.05rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+.scope-note a { color: var(--accent-text); text-decoration: underline; font-weight: 600; }
+
 /* ---------- Learning objectives + recap ---------- */
 .card--objectives { border-left: 3px solid var(--accent); }
 .objectives { margin: 0.3rem 0 0.3rem 1.2rem; display: grid; gap: 0.35rem; }

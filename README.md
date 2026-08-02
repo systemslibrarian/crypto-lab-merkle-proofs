@@ -4,6 +4,19 @@
 
 This is an interactive demo of **Merkle trees** and **Merkle inclusion proofs**, built on **SHA-256** via the browser's WebCrypto API. A Merkle tree hashes a set of data blocks into a single root hash that commits to all of them at once; an inclusion proof is the short list of sibling hashes that lets anyone re-derive that root from a single leaf. The security model is purely **hash-based**: it relies on the collision and second-preimage resistance of SHA-256, with no keys or signatures involved. Hashing follows **RFC 6962** domain separation (`leaf = SHA-256(0x00 ∥ data)`, `node = SHA-256(0x01 ∥ left ∥ right)`), which is what makes the second-preimage defense in the demo real rather than decorative. It is a teaching tool, not a production library.
 
+## Where This Sits Next to crypto-lab-merkle-vault
+
+Two labs in this catalog cover Merkle trees, and they are not interchangeable. **This one is about
+proof semantics**: where the trusted root must come from, the exact bytes hashed at every step, RFC
+9162 index-based verification, consistency proofs with the history attacks they catch, the
+second-preimage and CVE-2012-2459 constructions broken on the page, and a pinned real Certificate
+Transparency entry verified against Google's Argon log.
+**[crypto-lab-merkle-vault](https://systemslibrarian.github.io/crypto-lab-merkle-vault/) is about
+the structure**: the tree drawn with parent-to-child connectors, a single proof walked one level at
+a time with the corresponding nodes lighting up as the running hash rises, and the recomputed and
+committed roots asserted equal byte for byte at the top. Start there for *what a Merkle tree is and
+how one climb works*; come here for *what a proof does and does not entitle you to believe*.
+
 ## When to Use It
 
 - **To prove one element belongs to a large committed set, cheaply.** A proof is `⌈log₂ n⌉` hashes, so a single transaction can be shown to be in a block of millions without sending the block.
