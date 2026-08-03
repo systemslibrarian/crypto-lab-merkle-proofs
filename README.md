@@ -42,6 +42,8 @@ npm run dev
 
 There are no environment variables. Run the test suite (RFC 6962 vectors, proof round-trips, tamper rejection, the second-preimage attack/defense, consistency proofs, fuzzing against an independent reference implementation, and the pinned real-world CT proof) with `npm test`.
 
+`npm run test:a11y` runs the browser gate (Playwright). `e2e/claims.spec.ts` drives the real page and re-derives every verdict from what the page printed — INCLUDED only when the recomputed root shown equals the trusted root shown, ROOTS COLLIDE only when the two roots printed are equal, the efficiency headline from its own arithmetic — and walks each tamper path (leaf, proof bit, log rewrite/delete/reorder, the CT certificate bit-flip) to assert it reaches rejection, names the cause, and recovers. `e2e/a11y.spec.ts` is the axe-core WCAG A/AA scan. Both run in CI before every Pages deploy.
+
 ## Teaching With It
 
 See **[TEACHING.md](TEACHING.md)** for an instructor guide: a 50-minute lesson flow, discussion questions, the misconceptions each section is designed to break, and homework extensions.

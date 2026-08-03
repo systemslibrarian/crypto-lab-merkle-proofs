@@ -226,7 +226,7 @@ function flashCount(msg: string): void {
 
 function updateCount(): void {
   const n = state.leaves.length;
-  leafCount.textContent = `${n} leaf${n === 1 ? '' : 'ves'} · proof size ≤ ${expectedProofLength(n)} hashes`;
+  leafCount.textContent = `${n} lea${n === 1 ? 'f' : 'ves'} · proof size ≤ ${expectedProofLength(n)} hashes`;
 }
 
 /** Rebuild the tree from leaves and refresh every dependent view. */
