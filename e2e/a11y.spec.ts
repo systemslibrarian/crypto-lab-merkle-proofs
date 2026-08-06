@@ -15,7 +15,6 @@ async function revealEverything(page: Page): Promise<void> {
     content: `*, *::before, *::after {
       transition: none !important;
       animation: none !important;
-      opacity: 1 !important;
     }`,
   });
   await page.evaluate(() => {
