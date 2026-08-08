@@ -220,7 +220,7 @@
         </div>
       </div>
 
-      <div id="leaf-list" class="leaf-list" aria-label="Current leaves"></div>
+      <div id="leaf-list" class="leaf-list" role="group" aria-label="Current leaves"></div>
       <p id="leaf-count" class="mt-note"></p>
 
       <p class="scroll-hint" aria-hidden="true">Wide trees scroll horizontally →</p>
@@ -418,7 +418,7 @@
       <p><strong>Why it works:</strong> the old root is stitched together from a few complete subtrees — and those exact subtrees still sit, byte-for-byte, inside the new tree. The proof hands the auditor just enough subtree roots to rebuild <em>both</em> the remembered old root and the claimed new root. If the same handful of hashes can reproduce both, nothing before entry <code>m</code> changed.</p>
 
       <p class="mt-hint">The log (a growing list of certificates; shaded = the old size-m prefix):</p>
-      <div id="cons-log" class="leaf-list" aria-label="Append-only log entries"></div>
+      <div id="cons-log" class="leaf-list" role="group" aria-label="Append-only log entries"></div>
 
       <div class="select-row">
         <label for="cons-old">Old size (m)</label>
