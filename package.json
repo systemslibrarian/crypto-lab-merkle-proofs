@@ -13,12 +13,12 @@
     "deploy": "vite build && gh-pages -d dist"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.12.1",
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.62.1",
     "@types/node": "^26.2.0",
     "gh-pages": "^6.3.0",
     "jsdom": "^29.1.1",
-    "typescript": "^5.7.0",
+    "typescript": "^7.0.2",
     "vite": "^8.2.1",
     "vitest": "^3.0.0"
   }
