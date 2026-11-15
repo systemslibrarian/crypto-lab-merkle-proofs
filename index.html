@@ -483,7 +483,7 @@
       <div class="app-grid">
         <div class="app">
           <h3>Bitcoin &amp; Ethereum</h3>
-          <p>Block headers commit to a Merkle root of all transactions. An <span data-term="spv"><abbr title="Simplified Payment Verification">SPV</abbr></span> / light client proves a transaction is in a block with a short branch — no need to download the full chain. <em>Caveat if you try this at home:</em> Bitcoin's construction differs from this lab's — double SHA-256, byte-reversed txids, no domain separation (hence section 6's CVE), so its roots won't match an RFC 6962 tree.</p>
+          <p>Block headers commit to a Merkle root of all transactions. An <span data-term="spv"><abbr title="Simplified Payment Verification">SPV</abbr></span> / light client proves a transaction is in a block with a short branch — no need to download the full chain. <em>Caveat if you try this at home:</em> Bitcoin's construction differs from this lab's — double SHA-256, byte-reversed txids, no domain separation, and odd nodes duplicated (hence section 6's CVE), so its roots won't match an RFC 6962 tree.</p>
         </div>
         <div class="app">
           <h3>Git</h3>
