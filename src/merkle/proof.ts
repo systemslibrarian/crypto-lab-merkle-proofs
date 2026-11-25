@@ -2,7 +2,7 @@
  * proof.ts — Inclusion (audit) proof generation and verification.
  *
  * A proof is the minimal set of sibling hashes on the path from a leaf to the
- * root. Its length is the tree height, so proof size grows as O(log n) in the
+ * root. Its length is at most the tree height, so proof size grows as O(log n) in the
  * number of leaves — the property that makes Merkle proofs useful at scale.
  *
  * Verification recomputes the root from (leaf, proof) ALONE — it never needs the
@@ -107,7 +107,7 @@ export async function verifyProof(
   };
 }
 
-/** Theoretical proof length (number of sibling hashes) for n leaves. */
+/** Maximum inclusion proof length (number of sibling hashes) for n leaves. */
 export function expectedProofLength(n: number): number {
   if (n <= 1) return 0;
   return Math.ceil(Math.log2(n));

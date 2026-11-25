@@ -21,7 +21,7 @@ This lab is designed to run as a guided 50-minute session or as self-paced homew
 
 ## Discussion questions
 
-1. Why is proof size `⌈log₂ n⌉` and not `n/2` or `log₁₀ n`? What property of the tree gives the logarithm its base?
+1. In a five-leaf tree, why do the first four leaves need three sibling hashes each while the final leaf needs one? Explain the upper bound `⌈log₂ n⌉` and what gives the logarithm its base.
 2. Where does the verifier's trusted root come from in Bitcoin? In Certificate Transparency? What breaks if that channel is compromised? (§4's attack demo is the setup for this.)
 3. A plain inclusion proof cannot prove something is *absent*. Why not? What tree structure would you need? (Sorted / sparse Merkle trees.)
 4. Bitcoin duplicates the odd node; RFC 6962 promotes it. Both "work." Why is one a CVE and the other fine?

@@ -19,11 +19,11 @@ how one climb works*; come here for *what a proof does and does not entitle you 
 
 ## When to Use It
 
-- **To prove one element belongs to a large committed set, cheaply.** A proof is `⌈log₂ n⌉` hashes, so a single transaction can be shown to be in a block of millions without sending the block.
+- **To prove one element belongs to a large committed set, cheaply.** A proof contains at most `⌈log₂ n⌉` sibling hashes, so a single transaction can be shown to be in a block of millions without sending the block.
 - **To detect tampering against a trusted root.** If you already hold the root, you can verify any leaf+proof and reject anything that doesn't recompute to it.
 - **To give light clients integrity without full state.** SPV wallets and stateless clients check membership against a header's root instead of downloading everything.
 - **To make a log verifiably append-only.** Certificate Transparency uses exactly this RFC 6962 construction.
-- **Do NOT use a Merkle proof to prove *non*-membership or order** unless the tree is specifically a sorted/sparse Merkle tree — a plain inclusion proof says nothing about what is absent, and a tree built without domain separation is open to second-preimage forgery.
+- **Use an index-aware inclusion proof to check position.** With a trusted root and tree size, RFC 9162 verification checks an entry at a particular index. A single inclusion proof does not establish that the entire log is sorted or that a different entry is absent.
 
 ## Live Demo
 

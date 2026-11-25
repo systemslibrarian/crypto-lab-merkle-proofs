@@ -170,7 +170,7 @@
       <h2 id="s-goals">What you'll be able to do</h2>
       <ul class="objectives">
         <li>Build a Merkle tree and explain what its root <em>commits</em> to.</li>
-        <li>Generate and verify an inclusion proof by hand — and say why it's only <code>⌈log₂ n⌉</code> hashes.</li>
+        <li>Generate and verify an inclusion proof by hand — and explain why it needs at most <code>⌈log₂ n⌉</code> sibling hashes.</li>
         <li>Explain where the trusted root must come from, and why a proof without that is worthless.</li>
         <li>Break two real constructions: the second-preimage forgery (no domain separation) and CVE-2012-2459 (odd-node duplication).</li>
         <li>Verify a consistency proof and state exactly what "append-only" does and doesn't guarantee.</li>
@@ -300,7 +300,7 @@
 
       <div class="quiz-card"
         data-correct="b"
-        data-why-correct="Exactly — the verifier only needs the leaf plus ⌈log₂ n⌉ sibling hashes, and recomputes the root itself. It never needs the other leaves or the trusted party to re-send the tree."
+        data-why-correct="Exactly — the verifier only needs the leaf and its path of at most ⌈log₂ n⌉ sibling hashes, and recomputes the root itself. It never needs the other leaves or the trusted party to re-send the tree."
         data-why-wrong="Re-read the trace: the verifier recomputes the root from just the leaf and the sibling hashes. It does not need the full tree, the other leaves, or to trust the prover.">
         <h4>Self-check</h4>
         <fieldset class="quiz-fieldset">
@@ -317,7 +317,7 @@
     <!-- 5. Efficiency & security -->
     <section class="card" aria-labelledby="s-eff">
       <h2 id="s-eff">5 · Why It Scales (Logarithmic Proofs)</h2>
-      <p>Proof size grows with the <em>height</em> of the tree, not its width — that's <code>⌈log₂ n⌉</code> hashes for <code>n</code> leaves. Drag to see how a proof stays tiny even as the dataset explodes.</p>
+      <p>An inclusion proof contains one hash for each sibling along the leaf’s path, up to <code>⌈log₂ n⌉</code> hashes for <code>n</code> leaves. In a five-leaf tree, the first four leaves need three siblings each and the last leaf needs just one. The slider uses powers of two, where all paths have the same length.</p>
 
       <div class="eff-slider-row">
         <label for="eff-slider">Tree size: 2<sup id="eff-exp-label"></sup></label>
@@ -338,16 +338,16 @@
       </div>
       <div id="eff-build-out" class="eff-build-out"></div>
 
-      <p class="mt-hint">In the wild: a Bitcoin block with ~3,000 transactions (~1.5&nbsp;MB) needs a <strong>12-hash proof — 384 bytes</strong> — for an <span data-term="spv"><abbr title="Simplified Payment Verification">SPV</abbr></span> wallet to confirm a payment. Certificate Transparency logs hold <strong>billions</strong> of certificates and still prove any one of them in <strong>32 hashes ≈ 1&nbsp;KB</strong> — you'll verify a real one in section 8.</p>
+      <p class="mt-hint">In the wild: a Bitcoin block with ~3,000 transactions (~1.5&nbsp;MB) needs a <strong>12-hash proof — 384 bytes</strong> — for an <span data-term="spv"><abbr title="Simplified Payment Verification">SPV</abbr></span> wallet to confirm a payment. Certificate Transparency logs hold <strong>billions</strong> of certificates and still have short inclusion proofs. The real entry in section 8 uses <strong>32 hashes = 1,024 bytes</strong>.</p>
 
       <div class="quiz-card"
         data-correct="a"
-        data-why-correct="Right — ⌈log₂ 1,000,000,000⌉ = 30. Doubling the tree adds ONE hash to the proof; that's the whole trick."
-        data-why-wrong="Proof size is the tree's HEIGHT, not its width: ⌈log₂ n⌉. For a billion leaves that's ⌈log₂ 10⁹⌉ = 30 hashes — under a kilobyte.">
+        data-why-correct="The longest path needs 30 sibling hashes because ⌈log₂ 1,000,000,000⌉ = 30. Some leaves have shorter paths."
+        data-why-wrong="For a billion leaves, the longest path has ⌈log₂ 10⁹⌉ = 30 sibling hashes, or 960 bytes with SHA-256.">
         <h4>Self-check</h4>
         <fieldset class="quiz-fieldset">
-          <legend>A tree commits to one billion leaves. Roughly how many hashes are in one inclusion proof?</legend>
-          <label><input type="radio" name="q-eff" value="a"> About 30.</label>
+          <legend>A tree commits to one billion leaves. How many sibling hashes does its longest inclusion proof contain?</legend>
+          <label><input type="radio" name="q-eff" value="a"> 30.</label>
           <label><input type="radio" name="q-eff" value="b"> About 30,000.</label>
           <label><input type="radio" name="q-eff" value="c"> About a million.</label>
         </fieldset>
@@ -512,7 +512,7 @@
             <tr><th scope="row">Question answered</th><td>"Is this leaf in the tree?"</td><td>"Is the old tree an untouched prefix of the new one?"</td></tr>
             <tr><th scope="row">Verifier holds</th><td>the leaf + the trusted root</td><td>the old root + the new root</td></tr>
             <tr><th scope="row">Prover sends</th><td>sibling hashes up the leaf's path</td><td>the subtree roots that rebuild both roots</td></tr>
-            <tr><th scope="row">Size</th><td><code>⌈log₂ n⌉</code> hashes</td><td><code>≈ log₂ n</code> hashes</td></tr>
+            <tr><th scope="row">Size</th><td>At most <code>⌈log₂ n⌉</code> sibling hashes</td><td><code>≈ log₂ n</code> hashes</td></tr>
             <tr><th scope="row">Who runs it</th><td>light clients, SPV wallets, browsers</td><td>log auditors and monitors</td></tr>
             <tr><th scope="row">What it can NOT prove</th><td>absence, order, or that the root is the agreed-upon one (§4)</td><td>that entries are valid, or that any specific entry is present</td></tr>
           </tbody>
